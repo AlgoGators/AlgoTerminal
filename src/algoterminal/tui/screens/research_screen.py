@@ -33,8 +33,29 @@ from algoterminal.research.writeup import generate_writeup
 from algoterminal.timeframe import DEFAULT_TIMEFRAME, TIMEFRAME_OPTIONS, resolve_timeframe
 from algoterminal.tui.screens.hypothesis_modal import HypothesisModal
 from algoterminal.tui.widgets.plot_view import PlotView
+from algoterminal.tui.widgets.thinking_indicator import ThinkingIndicator
 
 _NO_BACKTEST_MESSAGE = "No backtest run yet. Select a record and press Run Data+Backtest."
+
+_RESEARCH_WORDS = [
+    "Pulling data",
+    "Validating data",
+    "Backtesting",
+    "Crunching numbers",
+    "Simulating fills",
+    "Computing drawdowns",
+    "Annualizing",
+    "Rebalancing",
+    "Chasing alpha",
+]
+
+# Import name -> pip package name, for modules where they differ.
+_PACKAGE_NAME_OVERRIDES = {
+    "sklearn": "scikit-learn",
+    "cv2": "opencv-python",
+    "PIL": "pillow",
+    "yaml": "pyyaml",
+}
 
 
 class ResearchPane(Horizontal):
@@ -53,6 +74,7 @@ class ResearchPane(Horizontal):
                 yield Button("Run Data+Backtest (r)", id="run-cycle")
                 yield Button("Writeup (w)", id="gen-writeup")
                 yield Select(TIMEFRAME_OPTIONS, value=DEFAULT_TIMEFRAME, allow_blank=False, id="research-timeframe")
+            yield ThinkingIndicator(id="research-thinking", words=_RESEARCH_WORDS)
         with Vertical(id="detail-col"):
             yield VerticalScroll(Markdown(id="record-detail"), id="record-detail-scroll")
             with TabbedContent(id="charts-tabs"):
@@ -61,7 +83,7 @@ class ResearchPane(Horizontal):
                 with TabPane("Drawdown", id="chart-drawdown"):
                     yield PlotView(id="drawdown-chart")
                 with TabPane("Monthly Returns", id="chart-monthly"):
-                    yield VerticalScroll(Static(id="monthly-returns-table"))
+                    yield VerticalScroll(Static(id="monthly-returns-table"), id="monthly-returns-scroll")
                 with TabPane("Rolling Sharpe", id="chart-rolling-sharpe"):
                     yield PlotView(id="rolling-sharpe-chart")
                 with TabPane("Distribution", id="chart-distribution"):
@@ -69,7 +91,7 @@ class ResearchPane(Horizontal):
                 with TabPane("Exposure", id="chart-exposure"):
                     yield PlotView(id="exposure-chart")
                 with TabPane("Worst Drawdowns", id="chart-dd-periods"):
-                    yield VerticalScroll(Static(id="dd-periods-table"))
+                    yield VerticalScroll(Static(id="dd-periods-table"), id="dd-periods-scroll")
 
     def on_mount(self) -> None:
         table = self.query_one("#records-table", DataTable)
@@ -226,29 +248,50 @@ class ResearchPane(Horizontal):
         timeframe = self.query_one("#research-timeframe", Select).value
         start, end = resolve_timeframe(timeframe)
         self.notify(f"Pulling data ({start} to {end}) and running backtest for {self._selected.slug}...")
+        self.query_one("#research-thinking", ThinkingIndicator).busy = True
         self._run_cycle(self._selected, start, end)
 
     @work(exclusive=True, thread=True)
     def _run_cycle(self, record: ResearchRecord, start: date, end: date) -> None:
-        hypothesis = record.load_hypothesis()
-        provider = default_provider()
+        try:
+            hypothesis = record.load_hypothesis()
+            provider = default_provider()
 
-        data, reports = pull_and_validate(hypothesis, provider, start, end)
-        save_quality_reports(record, reports)
+            data, reports = pull_and_validate(hypothesis, provider, start, end)
+            save_quality_reports(record, reports)
 
-        primary = hypothesis.symbols[0]
-        if primary not in data or data[primary].empty:
-            self.app.call_from_thread(self.notify, f"No data returned for {primary}.", severity="error")
-            return
+            primary = hypothesis.symbols[0]
+            if primary not in data or data[primary].empty:
+                self.app.call_from_thread(self.notify, f"No data returned for {primary}.", severity="error")
+                return
 
-        if not record.strategy_path.exists():
-            scaffold_strategy(record, hypothesis)
+            if not record.strategy_path.exists():
+                scaffold_strategy(record, hypothesis)
 
-        strategy = load_strategy_module(record.strategy_path)
-        result = run_backtest(strategy, data[primary]["close"])
-        save_backtest_result(record, result)
+            try:
+                strategy = load_strategy_module(record.strategy_path)
+                result = run_backtest(strategy, data[primary]["close"])
+            except ModuleNotFoundError as exc:
+                package = _PACKAGE_NAME_OVERRIDES.get(exc.name, exc.name)
+                self.app.call_from_thread(
+                    self.notify,
+                    f"Strategy needs '{exc.name}', which isn't installed. Run: pip install {package}",
+                    severity="error",
+                )
+                return
+            except Exception as exc:
+                self.app.call_from_thread(
+                    self.notify, f"Strategy failed to run: {exc}", severity="error"
+                )
+                return
+            save_backtest_result(record, result)
 
-        self.app.call_from_thread(self._after_run_cycle, record)
+            self.app.call_from_thread(self._after_run_cycle, record)
+        finally:
+            self.app.call_from_thread(self._set_cycle_busy, False)
+
+    def _set_cycle_busy(self, busy: bool) -> None:
+        self.query_one("#research-thinking", ThinkingIndicator).busy = busy
 
     def _after_run_cycle(self, record: ResearchRecord) -> None:
         self.refresh_records()

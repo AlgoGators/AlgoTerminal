@@ -1,7 +1,6 @@
-"""Data tab: browse/edit universes, inspect the local cache, pull fresh data —
-plus two reference sub-tabs (Data Sources, Analysis Toolkit) cataloging what's
-integrated and what you can run on it. "Universes" is the only working
-sub-tab; the other two are read-only reference material, not a pipeline step.
+"""Data Universes tab: browse/edit universes, inspect the local cache, pull
+fresh data. This is just the catalog of easy-to-reach data we've found and
+wired up — not a pipeline step; Compare and backtest stats live elsewhere.
 """
 
 from __future__ import annotations
@@ -9,7 +8,7 @@ from __future__ import annotations
 from textual import work
 from textual.app import ComposeResult
 from textual.containers import Horizontal, Vertical, VerticalScroll
-from textual.widgets import Button, DataTable, Static, TabbedContent, TabPane
+from textual.widgets import Button, DataTable, Static
 
 from algoterminal.data import SOURCE_DESCRIPTIONS, cache, describe_symbol, provider_for_source
 from algoterminal.data.metadata import get_instrument_info, peek_metadata
@@ -17,77 +16,14 @@ from algoterminal.data.universe import Universe, UniverseStore
 from algoterminal.tui.screens.universe_modal import UniverseModal
 from algoterminal.theme import ORANGE
 
-_DATA_SOURCES_REFERENCE = f"""\
-[bold {ORANGE}]Data Sources[/]
-[dim]What's actually wired up and pulling real data — reference only. To use one, \
-create a universe (Universes tab) with its source key below.[/dim]
-
-[bold {ORANGE}]market[/]  [dim](default source)[/]
-{SOURCE_DESCRIPTIONS["market"]}
-Covers: equities, futures, FX, crypto, custom baskets — anything with a Yahoo/Stooq ticker.
-
-[bold {ORANGE}]nasa-power[/]
-{SOURCE_DESCRIPTIONS["nasa-power"]}
-Covers: temperature, solar irradiance, precipitation by lat/lon location, no key needed.
-
-[bold {ORANGE}]usgs-earthquake[/]
-{SOURCE_DESCRIPTIONS["usgs-earthquake"]}
-Covers: daily aggregated seismic event counts/magnitudes by region.
-
-[bold {ORANGE}]fred[/]
-{SOURCE_DESCRIPTIONS["fred"]}
-Covers: rates, inflation, employment, and other official US macro series.
-
-[bold {ORANGE}]world-bank[/]
-{SOURCE_DESCRIPTIONS["world-bank"]}
-Covers: annual macro/development indicators (GDP, population, etc.) by country.
-
-[bold {ORANGE}]fear-greed[/]
-{SOURCE_DESCRIPTIONS["fear-greed"]}
-Covers: one daily sentiment index (0-100) for the crypto market as a whole.
-
-[bold {ORANGE}]wiki-pageviews[/]
-{SOURCE_DESCRIPTIONS["wiki-pageviews"]}
-Covers: daily human traffic to a company/asset/macro-topic Wikipedia article — a free \
-proxy for retail search attention.
-
-[dim]Every source implements the same `DataProvider` interface, so the analytics, \
-Compare, and backtest layers don't care which one a symbol came from.[/dim]
-"""
-
-_ANALYSIS_TOOLKIT_REFERENCE = f"""\
-[bold {ORANGE}]Analysis Toolkit[/]
-[dim]What you can run once data exists — reference only. Cross-asset tools live in \
-the Compare tab; backtest stats appear automatically after running a backtest in \
-Strategies.[/dim]
-
-[bold {ORANGE}]Cross-asset comparison[/]  [dim](Compare tab — pick any two things)[/]
-  [bold]Correlation matrix[/] — Pearson correlation of daily returns across a set of series.
-  [bold]Rolling correlation[/] — 60-day-windowed correlation between two series, over time.
-  [bold]Cointegration (Engle-Granger)[/] — OLS regression + unit-root test on the residual; \
-checks whether two price series share a long-run equilibrium, the standard pairs-trading \
-validity check.
-  [bold]Relative performance[/] — rebases series to a common start (=100) for visual \
-cross-asset comparison.
-  [bold]Spread (A - B)[/] — hedge-ratio-adjusted difference between two series.
-  [bold]Ratio (A / B)[/] — cross-asset relative value, e.g. gold/silver.
-  [bold]Z-score spread[/] — the spread expressed in rolling std-dev units; the standard \
-pairs-trading entry/exit signal.
-  [bold]Rolling beta[/] — rolling-window OLS beta of one series' returns against the other's.
-
-[bold {ORANGE}]Backtest statistics[/]  [dim](Strategies tab, after Data + Backtest)[/]
-  [bold]CAGR[/] / [bold]Total Return[/] — annualized and cumulative growth of the equity curve.
-  [bold]Sharpe Ratio[/] — return per unit of total volatility.
-  [bold]Sortino Ratio[/] — return per unit of downside volatility only.
-  [bold]Max Drawdown[/] — largest peak-to-trough decline.
-  [bold]Win Rate[/] — share of periods with positive returns.
-  [bold]Rolling Sharpe[/] — trailing-window Sharpe over time (chart).
-  [bold]Drawdown periods[/] — the deepest drawdown episodes, tabulated (depth, length, recovery).
-  [bold]Monthly returns[/] — calendar heatmap of month-by-month performance.
-
-[dim]None of this is generated for you — Methodology still scaffolds three empty \
-functions. This is a menu of what's available to reach for, not a black box.[/dim]
-"""
+_UNIVERSES_NOTE = (
+    f"[bold {ORANGE}]Data Universes[/]\n"
+    "[dim]This is basically just a running list of the free/public data we've found and "
+    "wired up easy access to — market data (equities, futures, FX, crypto) plus alt-data "
+    "(weather, seismic activity, macro indicators, sentiment, search attention). Pick one "
+    "as a strategy's universe from the Hypothesis form, or add a new one below. Refresh "
+    "Data pulls it into the local cache; the panel on the right shows what's already cached.[/dim]"
+)
 
 
 class DataPane(Vertical):
@@ -97,29 +33,22 @@ class DataPane(Vertical):
         self._selected: Universe | None = None
 
     def compose(self) -> ComposeResult:
-        with TabbedContent(id="data-subtabs"):
-            with TabPane("Universes", id="data-sub-universes"):
-                with Horizontal(id="universes-pane"):
-                    with VerticalScroll(id="universe-col"):
-                        yield DataTable(id="universe-table", cursor_type="row")
-                        with Horizontal(id="universe-buttons"):
-                            yield Button("New", id="universe-new")
-                            yield Button("Edit", id="universe-edit")
-                            yield Button("Delete", id="universe-delete")
-                            yield Button("Refresh Data", id="universe-refresh", variant="primary")
-                    with VerticalScroll(id="data-detail-col"):
-                        yield Static(id="universe-detail")
-                        with Horizontal(id="cache-buttons"):
-                            yield Button("Fetch Info", id="fetch-info")
-                            yield Button("Clear Cache (universe)", id="clear-universe-cache")
-                            yield Button("Clear All Cache", id="clear-all-cache")
-                        yield DataTable(id="cache-table")
-            with TabPane("Data Sources", id="data-sub-sources"):
-                with VerticalScroll(id="data-sources-scroll"):
-                    yield Static(_DATA_SOURCES_REFERENCE)
-            with TabPane("Analysis Toolkit", id="data-sub-models"):
-                with VerticalScroll(id="analysis-toolkit-scroll"):
-                    yield Static(_ANALYSIS_TOOLKIT_REFERENCE)
+        yield Static(_UNIVERSES_NOTE, id="universes-note")
+        with Horizontal(id="universes-pane"):
+            with VerticalScroll(id="universe-col"):
+                yield DataTable(id="universe-table", cursor_type="row")
+                with Horizontal(id="universe-buttons"):
+                    yield Button("New", id="universe-new")
+                    yield Button("Edit", id="universe-edit")
+                    yield Button("Delete", id="universe-delete")
+                    yield Button("Refresh Data", id="universe-refresh", variant="primary")
+            with VerticalScroll(id="data-detail-col"):
+                yield Static(id="universe-detail")
+                with Horizontal(id="cache-buttons"):
+                    yield Button("Fetch Info", id="fetch-info")
+                    yield Button("Clear Cache (universe)", id="clear-universe-cache")
+                    yield Button("Clear All Cache", id="clear-all-cache")
+                yield DataTable(id="cache-table")
 
     def on_mount(self) -> None:
         table = self.query_one("#universe-table", DataTable)

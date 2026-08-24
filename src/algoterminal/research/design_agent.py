@@ -22,6 +22,7 @@ import subprocess
 import tempfile
 from enum import Enum
 
+from algoterminal.research.custom_agents import CustomAgent
 from algoterminal.research.storage import ResearchRecord
 
 REQUIRED_FUNCTIONS = ("generate_signals", "size_positions", "apply_risk_rules")
@@ -76,9 +77,11 @@ def build_prompt(record: ResearchRecord, instruction: str) -> str:
     )
 
 
-def run_edit(engine: Engine, record: ResearchRecord, instruction: str) -> tuple[bool, str]:
+def run_edit(engine: Engine | CustomAgent, record: ResearchRecord, instruction: str) -> tuple[bool, str]:
     """Invoke the chosen coding agent to edit `record.strategy_path`. Returns (ok, message)."""
-    if engine is Engine.CLAUDE:
+    if isinstance(engine, CustomAgent):
+        ok, message = _run_custom_edit(engine, record, instruction)
+    elif engine is Engine.CLAUDE:
         ok, message = _run_claude_edit(record, instruction)
     elif engine is Engine.CODEX:
         ok, message = _run_codex_edit(record, instruction)
@@ -181,6 +184,41 @@ def _describe_claude_error(payload: dict) -> str:
             "change correctly; check the code panel below before re-sending."
         )
     return f"claude stopped without finishing (stop_reason={stop_reason!r}, {num_turns} turns used)."
+
+
+def _run_custom_edit(agent: CustomAgent, record: ResearchRecord, instruction: str) -> tuple[bool, str]:
+    """Invoke a user-registered local CLI to edit `record.strategy_path`.
+
+    The command is whatever the user typed in when they registered the
+    agent, run through the shell with the prompt piped over stdin and the
+    record's own directory as cwd -- same invocation shape as
+    `_run_codex_edit`. There's no sandboxing here since this is the user's
+    own command running on their own machine, same as if they ran it
+    themselves in a terminal.
+    """
+    prompt = build_prompt(record, instruction)
+    try:
+        result = subprocess.run(
+            agent.command,
+            shell=True,
+            cwd=str(record.path),
+            input=prompt,
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            timeout=_TIMEOUT_SECONDS,
+        )
+    except subprocess.TimeoutExpired:
+        return False, f"{agent.name} timed out after {_TIMEOUT_SECONDS}s."
+    except OSError as e:
+        return False, f"Failed to launch {agent.name}: {e}"
+
+    if result.returncode != 0:
+        detail = (result.stderr or result.stdout or "").strip()[:2000]
+        return False, f"{agent.name} exited {result.returncode}: {detail}"
+
+    message = (result.stdout or "").strip()
+    return True, message or "Done."
 
 
 def _run_codex_edit(record: ResearchRecord, instruction: str) -> tuple[bool, str]:

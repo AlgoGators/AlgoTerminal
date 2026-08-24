@@ -25,9 +25,32 @@ from textual import events
 from textual.app import ComposeResult
 from textual.widget import Widget
 from textual_image._terminal import get_cell_size
-from textual_image.widget import SixelImage
+from textual_image.widget import SixelImage as _BaseSixelImage
+from textual_image.widget.sixel import _ImageSixelImpl as _BaseImageSixelImpl
+from textual_image.widget.sixel import _NoopRenderable
 
 from algoterminal.charts.mpl_charts import message_image
+
+
+class _NoSelectImageSixelImpl(_BaseImageSixelImpl):
+    ALLOW_SELECT = False
+
+
+class SixelImage(_BaseSixelImage, Renderable=_NoopRenderable):
+    """SixelImage that opts out of Textual's automatic text selection.
+
+    Widget defaults ALLOW_SELECT to True, and the sixel payload isn't text —
+    it's raw escape-code bytes — but a plain click still started a
+    text-selection pass over that region, which forced the (large) sixel
+    data to be retransmitted and made the chart visibly flutter for a
+    moment. Non-text widgets like Button/DataTable/Select all opt out of
+    this the same way.
+    """
+
+    ALLOW_SELECT = False
+
+    def compose(self) -> ComposeResult:
+        yield _NoSelectImageSixelImpl(self.image, self._sixel_options)
 
 
 class PlotView(Widget):
@@ -37,6 +60,15 @@ class PlotView(Widget):
     PlotView {
         width: 1fr;
         height: 1fr;
+    }
+    PlotView SixelImage {
+        /* Without this, the image has no explicit size, so Textual falls back to
+        sizing it from the raw rendered image's pixel dimensions instead of the
+        widget's actual box — that's what let charts/placeholders shove sibling
+        widgets around during the brief window before the first debounced
+        _redraw() applies its own explicit cell size. */
+        width: 100%;
+        height: 100%;
     }
     """
 
@@ -61,9 +93,13 @@ class PlotView(Widget):
         self._redraw()
 
     def show_message(self, message: str) -> None:
-        self._renderer = None
+        # Route through the same _redraw() path as show_chart() instead of
+        # setting .image directly — that's what applies the explicit,
+        # margin-scaled cell size instead of leaving Textual to size the
+        # widget off the placeholder image's raw pixel dimensions.
+        self._renderer = partial(message_image, message)
         self._last_render_size = None
-        self.query_one(SixelImage).image = message_image(message)
+        self._redraw()
 
     def on_resize(self, event: events.Resize) -> None:
         # Tab switches and terminal reflow fire a burst of resize events in

@@ -38,17 +38,19 @@ class HypothesisModal(ModalScreen[tuple[Hypothesis, ResearchRecord] | None]):
     }
     """
 
-    def __init__(self) -> None:
+    def __init__(self, prefill_title: str = "", prefill_thesis: str = "") -> None:
         super().__init__()
         self._universes = [u.name for u in UniverseStore().list()]
+        self._prefill_title = prefill_title
+        self._prefill_thesis = prefill_thesis
 
     def compose(self) -> ComposeResult:
         with Vertical(id="hyp-form"):
             yield Label("[bold]New Research Hypothesis[/bold]")
             yield Label("Title")
-            yield Input(placeholder="e.g. FX carry momentum overlay", id="title")
+            yield Input(placeholder="e.g. FX carry momentum overlay", id="title", value=self._prefill_title)
             yield Label("Thesis")
-            yield TextArea(id="thesis")
+            yield TextArea(self._prefill_thesis, id="thesis")
             yield Label(f"Universe (known: {', '.join(self._universes)})")
             yield Input(placeholder="g10-fx or AAPL,MSFT,...", id="universe")
             yield Label("Asset class")

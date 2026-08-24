@@ -1,6 +1,9 @@
 """The "Methodology" stage: scaffold a strategy file the user fills in themselves.
 
 No AI/LLM generation happens here — this is boilerplate templating only.
+
+Every strategy.py scaffold gets a matching C++ trade-engine stub written
+alongside it (see cpp_export.py) — production strategies need both.
 """
 
 from __future__ import annotations
@@ -9,6 +12,7 @@ import importlib.util
 from pathlib import Path
 from types import ModuleType
 
+from algoterminal.research.cpp_export import export_cpp_stub
 from algoterminal.research.models import Hypothesis
 from algoterminal.research.storage import ResearchRecord
 
@@ -16,7 +20,7 @@ _TEMPLATE_PATH = Path(__file__).parent / "templates" / "strategy_template.py.txt
 
 
 def scaffold_strategy(record: ResearchRecord, hypothesis: Hypothesis) -> Path:
-    """Write a strategy.py scaffold into the research record directory."""
+    """Write a strategy.py scaffold, plus its C++ trade-engine stub, into the record directory."""
     template = _TEMPLATE_PATH.read_text(encoding="utf-8")
     content = template.format(
         title=hypothesis.title,
@@ -26,6 +30,7 @@ def scaffold_strategy(record: ResearchRecord, hypothesis: Hypothesis) -> Path:
         expected_edge=hypothesis.expected_edge,
     )
     record.strategy_path.write_text(content, encoding="utf-8")
+    export_cpp_stub(record, hypothesis)
     return record.strategy_path
 
 

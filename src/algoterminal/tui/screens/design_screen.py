@@ -1,8 +1,14 @@
 """Design tab: pick a strategy on the left, describe what it should do at
-the top right, and an AI coding agent (Claude Code or Codex, your choice)
-writes it into that strategy's strategy.py. The code itself is also directly
-editable below, and the record's folder can be jumped to in Explorer/Finder
-or opened in VS Code.
+the top right, and an AI coding agent (Claude Code, Codex, or a
+locally-registered custom agent, your choice) writes it into that strategy's
+strategy.py -- and refreshes its C++ trade-engine stub to match. The code
+itself is also directly editable below, and the record's folder can be
+jumped to in Explorer/Finder or opened in VS Code.
+
+The agent row also lets you register your own local terminal agent (any CLI
+that reads a prompt from stdin) as an extra engine option, and download the
+scripts that define how prompts get built, for wiring the same contract into
+an off-path agent of your own.
 """
 
 from __future__ import annotations
@@ -14,14 +20,25 @@ from textual.app import ComposeResult
 from textual.containers import Horizontal, Vertical, VerticalScroll
 from textual.widgets import Button, DataTable, Input, Select, Static, TextArea
 
+from algoterminal.research.cpp_export import export_cpp_stub
+from algoterminal.research.custom_agents import CustomAgent, add_custom_agent, list_custom_agents
 from algoterminal.research.design_agent import ENGINE_LABELS, Engine, available_engines, run_edit
 from algoterminal.research.methodology import scaffold_strategy
+from algoterminal.research.script_export import export_prompt_scripts
 from algoterminal.research.storage import ResearchRecord, list_slugs, list_versions
 from algoterminal.theme import ORANGE
 from algoterminal.tui.os_actions import can_open_file_location, find_vscode, open_file_location, open_in_vscode
+from algoterminal.tui.screens.add_agent_modal import AddAgentModal
+from algoterminal.tui.widgets.thinking_indicator import ThinkingIndicator
 
 _NO_SELECTION_MESSAGE = "Select a strategy on the left."
-_NO_ENGINE_MESSAGE = "No AI CLI found on PATH — install Claude Code or Codex CLI to enable this."
+_NO_ENGINE_MESSAGE = "No AI CLI found on PATH and no custom agent registered — install Claude Code/Codex CLI, or add your own with + Agent."
+
+
+def _agent_label(agent: Engine | CustomAgent) -> str:
+    if isinstance(agent, CustomAgent):
+        return f"{agent.name} (custom)"
+    return ENGINE_LABELS[agent]
 
 
 class DesignPane(Horizontal):
@@ -31,8 +48,8 @@ class DesignPane(Horizontal):
         super().__init__()
         self._records: list[ResearchRecord] = []
         self._selected: ResearchRecord | None = None
-        self._engines: list[Engine] = []
-        self._engine: Engine | None = None
+        self._agent_options: list[Engine | CustomAgent] = []
+        self._engine: Engine | CustomAgent | None = None
         self._vscode_available = False
         self._folder_openable = False
 
@@ -48,7 +65,11 @@ class DesignPane(Horizontal):
                     id="design-prompt",
                 )
                 yield Button("Send", id="design-send", variant="primary")
+            with Horizontal(id="design-agent-row"):
+                yield Button("+ Agent", id="design-add-agent")
+                yield Button("Download Scripts", id="design-download-scripts")
             yield Static(id="design-status")
+            yield ThinkingIndicator(id="design-thinking")
             yield TextArea.code_editor("", language="python", id="design-code")
             with Horizontal(id="design-code-buttons"):
                 yield Button("Save", id="design-save")
@@ -66,20 +87,22 @@ class DesignPane(Horizontal):
         self._set_editing_enabled(False)
 
     def _refresh_engine_options(self) -> None:
-        self._engines = available_engines()
+        self._agent_options = [*available_engines(), *list_custom_agents()]
         select = self.query_one("#design-engine", Select)
-        select.set_options((ENGINE_LABELS[engine], engine) for engine in self._engines)
-        if self._engines:
-            self._engine = self._engines[0]
+        select.set_options((_agent_label(agent), agent) for agent in self._agent_options)
+        if self._agent_options:
+            self._engine = self._agent_options[0]
             select.value = self._engine
         else:
             self._engine = None
             status = self.query_one("#design-status", Static)
             status.update(f"[dim]{_NO_ENGINE_MESSAGE}[/dim]")
+        if self._selected is not None:
+            self._set_editing_enabled(True)
 
     def on_select_changed(self, event: Select.Changed) -> None:
         if event.select.id == "design-engine":
-            self._engine = event.value if isinstance(event.value, Engine) else None
+            self._engine = event.value if isinstance(event.value, (Engine, CustomAgent)) else None
 
     def refresh_records(self) -> None:
         self._records = []
@@ -103,6 +126,17 @@ class DesignPane(Horizontal):
             self._render_detail()
             self._load_code()
             self._set_editing_enabled(True)
+
+    def select_record(self, record: ResearchRecord) -> None:
+        """Programmatically select `record`, e.g. right after it's created elsewhere."""
+        for index, candidate in enumerate(self._records):
+            if candidate.slug == record.slug and candidate.version == record.version:
+                self.query_one("#design-records-table", DataTable).move_cursor(row=index)
+                self._selected = candidate
+                self._render_detail()
+                self._load_code()
+                self._set_editing_enabled(True)
+                return
 
     def _render_detail(self) -> None:
         detail = self.query_one("#design-detail", Static)
@@ -139,7 +173,7 @@ class DesignPane(Horizontal):
             )
 
     def _set_editing_enabled(self, enabled: bool) -> None:
-        have_engine = bool(self._engines)
+        have_engine = bool(self._agent_options)
         for widget_id in ("#design-code", "#design-save", "#design-reload"):
             self.query_one(widget_id).disabled = not enabled
         self.query_one("#design-engine", Select).disabled = not (enabled and have_engine)
@@ -160,6 +194,33 @@ class DesignPane(Horizontal):
             self._open_folder()
         elif event.button.id == "design-open-vscode":
             self._open_vscode()
+        elif event.button.id == "design-add-agent":
+            self._add_agent()
+        elif event.button.id == "design-download-scripts":
+            self._download_scripts()
+
+    def _add_agent(self) -> None:
+        self.app.push_screen(AddAgentModal(), self._on_agent_added)
+
+    def _on_agent_added(self, agent: CustomAgent | None) -> None:
+        if agent is None:
+            return
+        add_custom_agent(agent)
+        self._refresh_engine_options()
+        self.notify(f"Added {agent.name!r} as an agent option.")
+
+    def _download_scripts(self) -> None:
+        try:
+            zip_path = export_prompt_scripts()
+        except OSError as e:
+            self.notify(f"Couldn't export scripts: {e}", severity="error")
+            return
+        self.notify(f"Scripts exported to {zip_path}")
+        if self._folder_openable:
+            try:
+                open_file_location(zip_path)
+            except OSError:
+                pass
 
     def on_input_submitted(self, event: Input.Submitted) -> None:
         if event.input.id == "design-prompt":
@@ -206,33 +267,37 @@ class DesignPane(Horizontal):
             scaffold_strategy(record, record.load_hypothesis())
             self._load_code()
 
-        status = self.query_one("#design-status", Static)
-        status.update(f"[dim]{ENGINE_LABELS[engine]} is writing the strategy...[/dim]")
+        self.query_one("#design-status", Static).update("")
         self._busy(True)
-        self.notify(f"Sending instruction to {ENGINE_LABELS[engine]} for {record.slug}/{record.version}...")
+        self.notify(f"Sending instruction to {_agent_label(engine)} for {record.slug}/{record.version}...")
         self._run_agent_worker(engine, record, instruction)
 
     def _busy(self, busy: bool) -> None:
         self.query_one("#design-prompt", Input).disabled = busy
         self.query_one("#design-send", Button).disabled = busy
         self.query_one("#design-engine", Select).disabled = busy
+        self.query_one("#design-thinking", ThinkingIndicator).busy = busy
 
     @work(exclusive=True, thread=True)
-    def _run_agent_worker(self, engine: Engine, record: ResearchRecord, instruction: str) -> None:
+    def _run_agent_worker(self, engine: Engine | CustomAgent, record: ResearchRecord, instruction: str) -> None:
         ok, message = run_edit(engine, record, instruction)
         self.app.call_from_thread(self._after_agent, engine, record, ok, message)
 
-    def _after_agent(self, engine: Engine, record: ResearchRecord, ok: bool, message: str) -> None:
+    def _after_agent(self, engine: Engine | CustomAgent, record: ResearchRecord, ok: bool, message: str) -> None:
         self._busy(False)
         status = self.query_one("#design-status", Static)
         color = "green" if ok else "red"
         status.update(f"[{color}]{message}[/]")
         if ok:
             self.query_one("#design-prompt", Input).value = ""
+            try:
+                export_cpp_stub(record, record.load_hypothesis())
+            except Exception:
+                pass
         if record is self._selected:
             self._load_code()
         self.refresh_records()
-        label = ENGINE_LABELS[engine]
+        label = _agent_label(engine)
         self.notify(f"{label} finished." if ok else f"{label} failed — see status below the prompt.", severity="information" if ok else "error")
 
     def _save_code(self) -> None:

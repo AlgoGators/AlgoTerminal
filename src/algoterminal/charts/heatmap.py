@@ -56,10 +56,20 @@ def _return_color(value: float, scale: float = 0.10) -> str:
 
 def monthly_returns_heatmap(table: pd.DataFrame, title: str = "Monthly Returns") -> Table:
     """Calendar-style table of monthly returns, color-coded by magnitude."""
+    # Columns default to overflow="ellipsis" with no min_width, so Rich
+    # shrinks every column (and truncates cells with "…") to fit whatever
+    # width it's given rather than asking for more — pin each data column to
+    # its widest formatted value so it never truncates; the pane scrolls
+    # horizontally instead if the table ends up wider than the screen.
+    col_width = max(
+        (len(f"{float(v):+.1%}") for v in table.to_numpy().ravel() if pd.notna(v)),
+        default=6,
+    )
+
     rich_table = Table(title=f"[bold {ORANGE}]{title}[/]", show_lines=False, header_style=f"bold {ORANGE}", border_style="grey50")
     rich_table.add_column("Year")
     for col in table.columns:
-        rich_table.add_column(str(col), justify="right")
+        rich_table.add_column(str(col), justify="right", min_width=col_width)
 
     for year, row in table.iterrows():
         cells = [Text(str(year), style="bold")]
