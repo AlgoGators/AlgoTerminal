@@ -446,3 +446,96 @@ even in-sample the corrected raw book is 1.31, not the recorded 2.63.
 
 - `diag_assessment.py` — the diagnostics behind this section: saturation,
   concentration, rolling Sharpe, selection gap, overlay capture.
+
+---
+
+# Round 4 — falsifying the "extract more edge" levers (2026-09-10)
+
+Date: 2026-09-10. Scripts: `book_oos_v5.py` (full design space, 240 rows),
+`gate_test.py` (depth + crude-stress gate diagnostics).
+
+Goal: test the four prioritized levers from the Round 3 assessment. Result:
+all four fail to beat the Round 2/3 config. The recommended config is
+unchanged: CORE3 (crack_321 + cross_sectional + bzwti), equal weights,
+v2 DD overlay. OOS Sharpe 0.95, MaxDD -11.1%, vol 6.6%. This is now a
+well-tested local optimum for the price-only construction.
+
+## Lever 1: regime-aware overlay (v3, deep-crush gate) — FAILS
+
+Idea: stay invested during deep crush episodes (the 2020 windfall type),
+de-risk only in shallow-crush bleeds. Rule: if any held leg seasonal z
+<= -1.25, force FULL regardless of drawdown.
+
+Result: worse everywhere. CORE3 EQ v3: OOS Sh 0.80, DD -20.0% (vs v2
+0.95 / -11.1%). IS drops to 0.85.
+
+Why: the crack complex is structurally "crushed" in the bleed years too.
+Depth <= -1.25 on 70% of 2013 days, 59% of 2019, 54% of 2024. The gate
+keeps exposure through the bleeds it was meant to avoid. The discriminator
+does not discriminate.
+
+## Lever 2: crude-stress gate (CL z <= -1.5) — captures windfall, blows DD
+
+Idea: the 2020-04-20 windfall was a CRUDE-price event (WTI negative)
+that exploded the crack. Gate on crude stress, not crack crush.
+
+Result: captures 2020-04-20 fully (+21.1% vs +0.0% for v2) and recovers
++34.2% of the top-5-day P&L (vs +13.1%). But OOS DD -18.6% (vs -11.1%),
+Sharpe 0.90 (vs 0.95), IS 1.21 / -12.7% (vs 1.13 / -10.3%). Negative
+control clean (shuffled 0.36). Real, but it fails the user's MaxDD
+objective and is worse risk-adjusted.
+
+## The structural finding: windfall and bleed are the same state
+
+Both the 2020 windfall and the 2013/2024 bleeds occur while the complex is
+deeply crushed and crude is stressed. The strategy's payoff and its risk
+are the same position. In price-only land you cannot have the windfall
+without the bleed risk. The DD overlay's "forgone windfall" is not a
+fixable inefficiency; it is the honest price of the DD cap.
+
+The only way to get both (capture the windfall, cap the drawdown) is a
+different risk layer: an options overlay (buy crash protection, keep the
+long crush exposure). That is data-blocked (needs options data).
+
+## Lever 3: Brent complex legs — raw edge, no overlaid edge
+
+F5 = seasonal crush on Brent 3:2:1. F6 = cross-sectional most-crushed of
+{brent321, brent_gas, brent_ho}. Same products priced against Brent
+instead of WTI. brent321 corr 0.39 with wti321; brent_gas corr 0.04.
+
+Raw (no overlay): CORE3 EQ 0.71 -> CORE3B5 0.76, CORE3B6 0.77, CORE3BB
+0.78. Real raw-edge addition.
+
+Overlaid (v2): CORE3 EQ 0.95 -> CORE3B6 0.90. The overlay eats the gain:
+more factors means more ways to be in a drawdown, more de-risking.
+
+Verdict: keep Brent legs as a reserve. They add raw edge if the overlay is
+ever removed or a better risk layer (options) is added. Not adopted now.
+
+## Lever 4: risk-parity weights and sizing taming — no gain
+
+Risk-parity with covariance shrinkage (RP05/RP07, IS-trained): no gain
+over equal weight (0.70 vs 0.71 raw; 0.90 vs 0.95 overlaid). The 3y IS
+covariance is too noisy to beat equal weights.
+
+Sizing taming (per-factor position caps: cross 0.40, ng 0.40, cracks 0.60):
+cuts Sharpe (0.95 -> 0.61-0.68 overlaid). It trims the windfall days as
+much as the bleed days, because both run at full notional. No gain.
+
+## What this means
+
+The price-only construction is at a tested local optimum. The remaining
+levers are the data-blocked ones:
+1. Options overlay for the tail (capture windfall + cap DD). Needs options
+   data.
+2. Fundamental gating (storage, utilization, weather) from the data infra.
+   Needs a long-history EIA/weather provider build. FRED in the current
+   provider set has no storage/refinery series.
+3. True forward test. All history tuned or selected the strategy. The only
+   real out-of-sample starts now.
+
+## Artifacts (Round 4)
+
+- `book_oos_v5.py` — full design space (240 rows), Brent legs, v3 gate.
+- `book_oos_v5_results.csv` — the grid.
+- `gate_test.py` — depth-by-year + crude-stress gate + negative control.
