@@ -586,3 +586,87 @@ storage, and only right for options history.
   once the free key exists; start series where history covers 2007+.
 - For options: run the modeled-premium crash-put overlay study in
   parallel as a cost-sensitivity exercise.
+
+---
+
+# Round 5 — weather gate, options study, EIA provider (2026-09-10)
+
+Scripts: `weather_gate.py`, `options_study.py`, `reverify.py`. Data:
+`/tmp/panel_adj_2007_2026.parquet` (rebuilt from yfinance, byte-identical
+to the original 4829-row cache; see reproducibility note below).
+Weather: NASA POWER via the algoterminal-data repo provider (NYC/Houston/
+Rotterdam T2M, 2007-2026, keyless).
+
+## 1. Weather gate — FAILS (negative control proves no information)
+
+Hypothesis: NG and winter-distillate seasonal-crush longs need weather
+support. Gate: cut the position when the 7-day heating-degree-day z
+(expanding same-month climatology, causal) is below -1.0; restore at -0.5.
+
+Results (per-factor, then books with the overlay):
+- Gated NG: IS 0.37 / OOS -0.05 (vs raw 0.67 / 0.11). Worse.
+- Gated HO: IS 0.21 / OOS -0.16 (vs raw 0.11 / -0.08). Worse.
+- CORE3+NGW overlay: OOS 0.77 / -12.6% vs champion 0.95 / -11.1%. Worse.
+- Threshold sweep -0.75/-1.0/-1.5: flat (0.77-0.83). No signal.
+- City (NYC vs Houston): 0.77 vs 0.84. Noise.
+- NEGATIVE CONTROL: shuffled weather gives OOS Sharpe 0.80 vs real gated
+  0.77. The gate has ZERO information content relative to the strategy's
+  P&L.
+
+Interpretation: the NG/HO price-reversion edges are not weather-conditioned
+in the way a simple HDD gate captures. The gate removes good trades and
+keeps bad ones. Weather gating via this construction is falsified.
+NG and HO stay dropped from the book.
+
+## 2. Modeled crash-put overlay — economically dead for this book
+
+Real historical option prices are absent from every free source. The
+stylized screen (decision-logged) prices a rolling 1-month put on the
+CORE3 EQ raw book's monthly return with Black-76 at trailing realized
+vol, markup 1.0/1.25/1.5, strike -5/-7.5/-10/-15%, hedge 0.5/1.0.
+
+Results (full-sample monthly):
+- Cheapest useful cell (-5%, h=1.0, markup 1.0): premium 4.1%/yr, MaxDD
+  -29.2% -> -25.8%, Sharpe 0.75 -> 0.73. Loses on risk-adjusted terms.
+- Realistic markup (1.25): premium 6.9%/yr; destroys results.
+- Far-OTM (-15%): premium ~0.7%/yr but MaxDD and worst month barely move.
+- No grid cell beats the DD overlay (0.95 / -11.1%).
+
+Verdict: at ~16.6% book vol, crash-put premiums are too expensive relative
+to the book's ~12% raw CAGR. The DD overlay dominates every hedge cell.
+Pursuing real options data is NOT justified by this screen. The
+windfall-vs-DD tradeoff stands: the DD overlay's forgone windfall is the
+cheapest available resolution.
+
+## 3. EIA provider wired (storage + refinery utilization)
+
+The algoterminal-data repo now has an `eia` provider for the EIA Open Data
+API v2 (crude/Cushing/product/natgas storage + refinery utilization,
+weekly, full history). It is registered in list_sources and the
+eia-energy-storage universe. It needs the free EIA_API_KEY (register at
+eia.gov/opendata/register.php); it raises cleanly without the key.
+FRED's public CSV does not host these series (IDs verified 404).
+
+The storage-gating hypothesis is NOT yet tested. That is the remaining
+unfalsified lever, and it needs the key.
+
+## 4. Panel rebuild + reproducibility note
+
+The /tmp panel cache was wiped between sessions. Rebuilt from yfinance
+(CL/BZ/RB/HO/NG=F, auto_adjust=False, raw continuous front-month closes)
+and trimmed to 2007-07-02 -> 2026-09-09, 4829 rows. The restored panel is
+byte-identical to the original (CL=71.089996 on 2007-07-02 etc.), and the
+champion reproduces exactly: CORE3 EQ + v2 overlay IS 1.13 / -10.25%, OOS
+0.95 / -11.14%, vol 6.6%.
+
+Lesson: the analysis depended on an ephemeral cache. Rebuild script:
+`rebuild_panel.py` (should be added; the rebuild is a yfinance fetch +
+trim, 1-2 minutes).
+
+## Artifacts (Round 5)
+
+- `weather_gate.py` — HDD-z gate build + tests + negative control.
+- `options_study.py` — Black-76 crash-put cost screen (stylized).
+- `reverify.py` — champion/options/weather verification on restored panel.
+- algoterminal-data: `_providers/eia.py`, registered in __init__,
+  SOURCE_DESCRIPTIONS, eia-energy-storage universe.
