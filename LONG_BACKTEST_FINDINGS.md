@@ -1076,3 +1076,131 @@ days themselves.
 Artifacts: diag_inflection.py (V-shape buckets + yearly), diag_joint.py
 (joint descriptive + overlay quick test), book_oos_v7.py +
 book_oos_v7_results.csv (joint grid, yearly, worst days, shuffled control).
+
+---
+
+# Round 10 — vNext: three-track exploration and consolidated version (2026-09-10)
+
+Covers all gaps from Rounds 1-9 plus the three-track probe. Evaluation
+owns behavior first per EVALUATION_LENS.md. Every grid reports IS vs OOS,
+causal t-1, costs 5bps/20roll, WARMUP 90, CORE3 unless noted.
+
+## What was explored
+
+Track A (incremental, 90 rows, book_oos_v8_A.py): cap NOCAP/CAP8/CAP5 x
+Cushing OFF/S05(0.5)/S07(0.7) x joint V2/J_FULL/J_P3/P5/P10 x overlay
+BOOK/PER on CORE3 EQ. Thresholds pre-registered round: JOINT crash5>=1 &
+depth<=-1.25 & crude20<=-15%, Cushing scale 1-(1-min)*clip((z-0)/1.5).
+Track B (comprehensive, book_oos_v8_B.py): widened cross-section Brent
+F5/F6, depth-scaled sizing, vol-regime caps, product/Cushing sizing,
+utilization gate, per-complex JOINT. Track C (clean-slate, engine_v2.py):
+panel rebuild, basis fix, per-leg F2, gap caps, roll proxy, cost/stress
+sensitivity.
+
+## Track A — incremental upgrade: V2 stays champion under a DD budget
+
+Baseline V2 BOOK NOCAP OFF: IS 1.13/-10.2% OOS 0.95/-11.1% vol6.6% CAGR6.27%
+worst -2.85%, top5 32.3% of raw, shuffled V2 0.28 vs real 0.95.
+
+Grid top under strict DD>=-11.5%: V2 itself. No probationary, Cushing, cap,
+or per-complex beats it without DD slip.
+
+Relaxed DD>=-15%: best is NOCAP BOOK J_P5 (probationary N=5) 0.957/-14.7%
+vol9.06% CAGR8.63% — +0.007 Sharpe for +3.6% DD vs V2; captures 2020
+V2 +4.2% -> P5 +41.0% vs raw +32.8% but bleeds 2014 -3.2% vs 0% and 2019
+-2.2% vs -0.9%. J_FULL 0.946/-14.2% same within noise. Apparent top
+CAP5 S07 J_FULL 0.97/-13.0% vol5.8% IS 1.66 is IS-overfit (CAP5 clips low-vol
+IS tape, IS 1.66 vs V2 1.13, OOS +0.02) — do not adopt.
+
+Cushing continuous sizing hurts: NOCAP V2 S05 0.89/-11.2% vs 0.95/-11.1%;
+P5 S05 0.912 vs 0.957. Book dilution — bzwti 1/3 weight, standalone
+0.25->0.31 not enough.
+
+Per-complex worse: V2 PER 0.78/-12.5% vs BOOK 0.95/-11.1%; P5 PER 0.88 vs
+0.957. Gap caps hurt: CAP8 V2 0.61/-14.0%, CAP5 0.52/-15.9% vs NOCAP 0.95.
+
+Lens: JOINT bucket +0.89% vs grind +0.037% (n=29 OOS, 0 IS), shuffled P5
+mean 0.833 sd0.083 vs real 0.957 (1.5sd), top5 share 32.3%->37.6% (convexity
+up, DD cost). Probationary N=3/5/10 closed without gain.
+
+Falsified: Cushing as continuous sizer, per-complex, CAP5/8, probationary.
+Retained: V2 as best under DD; JOINT FULL as rare crisis toggle (+0.06
+Sharpe for +2% DD, IS-safe) — keep as option, not default.
+
+## Track B — comprehensive: widening and depth-scaling do not beat V2
+
+Brent F5/F6 raw widening confirmed: CORE3 0.71 -> CORE3B6 0.78 (+0.07)
+but book-level overlay eats it (0.95->0.90) as in Round 4. Per-complex
+overlay preserves partially but not enough to beat V2 (B comprehensive grid
+sampled depth-scaled vs binary, vol-regime caps 1.0/0.7/0.4, product sizing
+0.20*floor0.40, Cushing 0.30*floor0.30, util gate 1.0/0.5, JOINT BOOK/PER:
+no combo beat V2 BOOK NOCAP OFF on Sharpe at matched DD). Depth-scaled
+sizing (-z-0.5)/1.5 and vol-regime caps repeat Round 4 taming no-gain.
+Product stocks sizing and util gate repeat weather/storage falsified. Honest
+OOS correlations for the widened set: crack_321 vs cross 0.34, cross vs
+bzwti -0.25, brent_gas vs wti321 0.04 — Brent gas is the only near-zero
+leg, but its vol contribution still triggers more overlay de-risking.
+
+Retained: Brent gas as the sole genuine diversifier (0.04), as reservoir
+for a future sleeve with options-based tail or per-complex risk.
+
+## Track C — clean-slate engine: how much edge was measurement
+
+engine_v2.py (--smoke) reproduces book_oos_v4 baseline within 0.01:
+CORE3 EQ raw OOS 0.71/11.08%/-29.8%/16.6% vs v4 0.71/11.1%/-29.8%/16.6%.
+
+Published IS 2.63 -> honest 1.69 after fixing basis+costs+frozen weights
+(36% measurement/selection). pct_change near zero: BZ-WTI 548 crosses, max
+|pct| inf (0.00->0.30 on 2009-07-07) vs honest |diff/base| 910.7% finite;
+crack_gas 2613%->1107%, crack_321 406%->598%. F2 leg-switch phantom booked
+-22.5% on 2012-01-09 for $8.4 jump; honest per-leg -0.3%. G2 basis fix
+dropped IS cross 1.02->0.75. Roll stub 20bps/yr vs slope proxy (21d front
+pct*0.4, 5d smooth, +-6% clip): mean delta +0.04bps/yr OOS net zero, but
+hides regime sign +30-50bps earn in 2021-22 backwardation and -30-50bps
+bleed in 2015 contango — stub honest on average, dishonest on regime.
+True adjacent spread unavailable via yfinance free (back-adjusted front
+hides expiry gaps). Trade 5->10bps drops Sharpe 0.71->0.67, 20bps->0.59;
+stress double (5*2 on high-vol days, 75th pctile 20d CL vol) drops
+0.71->0.70 and CAGR 11.08->10.90% (+18bps/yr). Gap caps halve worst day
+-12.16%->-5.59% at CAP5 with Sharpe 0.71->0.65.
+
+Panel durable via python engine_v2.py --rebuild-panel -> panel_v2.parquet
+(185KB) plus /tmp mirror. Settlement vs close unavailable free.
+
+## vNext — consolidated version (book_vNext.py)
+
+A single runnable strategy owning the next version after CORE3 EQ V2.
+Defaults reproduce the champion; flags cover every gap as an option rather
+than a forced pick, per your not-fitting-to-metrics steer.
+
+```
+python book_vNext.py                           # V2 champion
+python book_vNext.py --joint full              # + joint crisis (IS-safe, 32 days OOS)
+python book_vNext.py --joint prob5 --verbose   # probationary crisis (covers DD question)
+python book_vNext.py --cush s05 --cap cap8     # Cushing + gap cap (gap risk)
+python book_vNext.py --subset core3bb --overlay per  # Brent sleeve
+```
+
+Flags: --subset core3/core3bb, --joint off/full/prob3/prob5/prob10,
+--cush off/s05/s07, --overlay book/per, --cap nocap/cap8/cap5, --verbose,
+--cost-sensitivity. All causal, all windows, all costs.
+
+Gaps ledger in book_vNext.py header plus --verbose gap coverage; Track C
+roll/cost honesty in engine_v2.py. Default vNext IS 1.13/-10.2% OOS
+0.95/-11.1% (same as V2). With --joint full: IS 1.13/-10.2% OOS 1.01/-13.1%
+% (+0.06 Sharpe, +14% of 2020 windfall, +2% DD). With --subset core3bb
+--overlay per: raw widening + diversification at per-complex cost.
+
+## Next questions still standing
+
+* Joint for 0.5 re-cock instead of FULL (would keep 2020 with less DD).
+* Joint with tighter crude window (10d) or vol-adjusted crude stress.
+* Brent sleeve with options-based tail or dedicated per-complex budget
+  (avoids book-level overlay eating diversification).
+* True forward test — all history selected; only new data is OOS.
+
+Artifacts: book_vNext.py (consolidated runnable), engine_v2.py +
+TRACK_C_FINDINGS.md + panel_v2.parquet + engine_v2_results.csv +
+panel_comparison.csv, book_oos_v8_A.py + book_oos_v8_A_results.csv +
+TRACK_A_FINDINGS.md, book_oos_v8_B.py + book_oos_v8_B_results.csv +
+TRACK_B_FINDINGS.md (partial).
