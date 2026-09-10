@@ -539,3 +539,50 @@ levers are the data-blocked ones:
 - `book_oos_v5.py` — full design space (240 rows), Brent legs, v3 gate.
 - `book_oos_v5_results.csv` — the grid.
 - `gate_test.py` — depth-by-year + crude-stress gate + negative control.
+
+---
+
+# Data-source audit — correction to Round 4's "data-blocked" claim (2026-09-10)
+
+Round 4 said the remaining levers were data-blocked. A full audit of every
+algoterminal-data source shows that was wrong for weather, half-wrong for
+storage, and only right for options history.
+
+## What each source actually holds
+
+| source | what it can serve | usable for the strategy? |
+| --- | --- | --- |
+| yfinance | market OHLCV, current option chains | prices (as used); NOT historical options |
+| stooq | market OHLCV fallback | prices only |
+| nasa-power | satellite weather from 1981+, keyless | YES — Houston/Rotterdam T2M verified 2007-2026 through the repo provider (7,193 daily points) |
+| fred | macro whitelist, keyless | no EIA storage series; candidate IDs 404 (FRED's public CSV does not host weekly energy storage) |
+| usgs / world-bank / fear-greed / wiki-pageviews | seismic / macro / sentiment / attention | not relevant |
+| EIA API (api.eia.gov/v2) | full-history weekly storage + refinery utilization | blocked only by a FREE key (register: eia.gov/opendata/register.php). The current repo has no EIA provider and no key. |
+| ir.eia.gov bulk | weekly reports | current weeks only, no history |
+
+## Corrected status of the "data-blocked" levers
+
+1. Weather gate (NG winter demand, winter distillates, freeze/hurricane
+   refinery risk): BUILDABLE NOW. The existing nasa-power provider returns
+   Houston/Rotterdam daily temperature for the full 2007-2026 window,
+   keyless. This is the strongest unlocked path.
+2. Storage/utilization gate (crude stocks, Cushing, natgas working
+   storage, refinery utilization): available with one free EIA key + a
+   small new provider. Not a data constraint; an access step.
+3. Options overlay: still genuinely blocked for REAL historical option
+   prices (no free source has them; yfinance is current-chain only). A
+   modeling path exists without options data: price a crash-put overlay on
+   the crack/futures vol with Black-76 under conservative premium
+   assumptions, and test cost sensitivity. That answers "could a
+   crash-put overlay have worked at plausible premiums", not "what would
+   fills have been".
+
+## Action items
+
+- Wire the weather gate first: fetch HOUSTON + ROTTERDAM T2M via the
+  existing provider, align to the futures panel, test gating the NG and
+  winter-distillate legs with strict OOS discipline (pre-registered rule).
+- Add an EIA provider (storage crude/Cushing/NG + refinery utilization)
+  once the free key exists; start series where history covers 2007+.
+- For options: run the modeled-premium crash-put overlay study in
+  parallel as a cost-sensitivity exercise.
