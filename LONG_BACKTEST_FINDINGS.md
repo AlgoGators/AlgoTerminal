@@ -3,6 +3,10 @@
 Date: 2026-09-09. Worktree: `/home/sebas/algoterminal-strategy-dev` (branch
 `strategy-dev`).
 
+Evaluation procedure owned by `EVALUATION_LENS.md`: behavior first,
+numbers second. Every run is mined for regime behavior, mechanism,
+retained signal, and next variants before any verdict.
+
 Data: yfinance continuous futures, back-adjusted closes, 2007-07-02 to
 2026-09-09 (4829 rows). CL=F, BZ=F, RB=F, HO=F, NG=F. Same tickers and
 construction as the recorded research.
@@ -712,3 +716,114 @@ Remaining honest paths (all previously assessed):
 Artifacts: fetch_eia.py (verified codes), storage_gate.py, the repo
 provider eia.py (route mapping for stoc/wstk, natural-gas/stor/wkly,
 petroleum/pnp/wiup).
+
+---
+
+# Round 7 — behavioral re-read of the falsified levers (2026-09-10)
+
+Rounds 4-6 killed five levers by the number: Sharpe or MaxDD vs the
+champion. This section re-reads each through the evaluation lens
+(EVALUATION_LENS.md). The point is not to relitigate the verdicts. It is
+to recover the behavior and the usable signal each run did produce.
+
+## 1. Weather gate (Round 5): the failure is a fact about the driver
+
+Number said: dead. Shuffled weather matched real weather (0.80 vs 0.77).
+
+Behavior: the NG and HO reversion edges carry no daily weather-demand
+conditioning. The 2020 NG reversion worked in warm weather. The 2013 and
+2019 bleeds were margin-compression years, not weather years.
+
+Mechanism: the reversion is flow-driven (forced unwinds, margin
+compression), not physical-demand-driven. This is the strongest positive
+fact of Round 5. It redirects feature work from physical conditioning
+(weather, storage) toward flow proxies: COT positioning, open-interest
+collapse, option skew, reversal speed.
+
+Retained: weather as regime identity for sub-sample validation (warm vs
+cold winters), and size conditioning instead of on/off gating. Not
+tested.
+
+## 2. Storage gates (Round 6): H3 is the first physical variable with the predicted sign
+
+Number said: H1 and H2 worse, H3 small (bzwti 0.25 -> 0.31, MaxDD
+-41.8% -> -33.9%). Gates die in the book.
+
+Behavior: Cushing stock z-score de-risking moved bzwti in the direction
+the tank-tops story predicts, under a causal construction (report lag +
+forward fill). Weak but directionally consistent.
+
+Mechanism: the Brent-WTI basis edge may be partly physical (Cushing
+capacity binds, WTI discounts to Brent), while crack reversion is
+flow-driven. Different legs, different drivers.
+
+Retained: utilization (stocks / capacity) instead of stock z; size
+conditioning instead of a gate; regime identity for sub-samples. Not
+tested.
+
+## 3. Crash-put overlay (Round 5): it bought back the book's own payoff
+
+Number said: dead. No grid cell beat the DD overlay at modeled premiums.
+
+Behavior: at ~16% book vol a protective put costs ~4.1%/yr for a -29% ->
+-26% MaxDD move. Far-OTM puts (~0.7%/yr) barely move the tail. Worst days
+cluster in the same states where the book earns most (2020).
+
+Mechanism: variance is intrinsic to the payoff. A flat-book put
+repurchases the book's own convexity at retail premium. The state overlap
+seen in Round 4 is confirmed.
+
+Retained: cheaper asymmetric structures (put spreads, narrower hedges
+active only in the fat-tail state) were not tested. The practical
+direction is to keep exposure in stress and harden the reversal timing
+(see lever 4) instead of paying to sit out.
+
+## 4. Crude-stress gate (Round 4): the separator is speed, not level
+
+Number said: failed. Captured the +21.1% windfall, MaxDD -18.6%, Sharpe
+0.90.
+
+Behavior: stress level does not separate 2020 (windfall) from 2013 and
+2019 (bleed). All three run deeply crushed with crude stressed.
+
+Mechanism: the separator is likely the inflection. A V-shaped crash with
+a fast reversal pays. A slow grind bleeds. Level equals, path differs.
+
+Retained: conditioning on reversal speed or inflection (OI collapse then
+restoration, price recovery speed, 5-day reversal strength) instead of
+stress level. This is the most promising reopen.
+
+## 5. Brent legs (Round 4): the overlay ate the diversification
+
+Number said: not adopted. Raw 0.71 -> 0.78, overlaid 0.95 -> 0.90.
+
+Behavior: Brent legs add real raw edge. brent_gas correlates 0.04 with
+wti321. The book-level DD overlay then de-risks more as more factors add
+drawdown states.
+
+Mechanism: overlay granularity is the problem, not the legs. A
+per-complex overlay (de-risk each complex on its own drawdown) may let
+the diversification survive the de-risking. Not tested.
+
+## The dropped factors, re-read
+
+crack_ho (0.11 IS, -0.08 OOS, MaxDD -68.7%): the DD clusters in winter
+episodes. This is the exact leg where the weather hypothesis should have
+worked. That it did not is more evidence the channel is flow, not
+physical. Dropped from the book, kept as evidence.
+
+ng (0.67 IS, 0.11 OOS): the 2007-2023 window includes the gas glut years.
+A structural oversupply regime, not a dead mechanism. The seasonal-crush
+construction may behave differently in a different supply regime. Tag the
+regime instead of deleting the idea.
+
+## What this changes
+
+- Driver map: crack reversion is flow-driven. Brent-WTI basis is partly
+  physical (Cushing). Feature work follows the driver.
+- Reopen candidates in order: reversal-speed discriminator (4),
+  per-complex overlay (5), Cushing-utilization sizing (2), weather as
+  regime identity (1), cheaper tail structures (3).
+- Killed constructions only: depth gates, weather on/off gates,
+  product/natgas storage gates, book-level puts at modeled premiums,
+  IS-trained risk-parity weights, fixed position caps.
