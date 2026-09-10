@@ -1204,3 +1204,90 @@ TRACK_C_FINDINGS.md + panel_v2.parquet + engine_v2_results.csv +
 panel_comparison.csv, book_oos_v8_A.py + book_oos_v8_A_results.csv +
 TRACK_A_FINDINGS.md, book_oos_v8_B.py + book_oos_v8_B_results.csv +
 TRACK_B_FINDINGS.md (partial).
+
+---
+
+# Round 11 — joint at half scale and tighter windows (2026-09-10)
+
+Tests the three still-standing questions from Round 10 on the same
+causal panel (CORE3, NOCAP, book-level overlay unless noted, costs
+5bps/20roll).
+
+## 1) Joint at 0.5 vs FULL and probationary
+
+JOINT = crash5>=1 & depth<=-1.25 & crude20<=-15% (32 OOS days, 0 IS).
+Applying the DD overlay with joint_scale 0.5 (re-cock to HALF, not FULL)
+vs 1.0:
+
+| variant | IS Sh | OOS Sh | OOS CAGR | OOS MaxDD | vol | worst |
+| --- | --- | --- | --- | --- | --- | --- |
+| V2 (no joint) | 1.14 | 0.95 | 6.3% | -11.1% | 6.6% | -2.85% |
+| HALF book | 1.14 | 1.00 | 7.2% | -12.5% | 7.3% | -2.85% |
+| FULL book | 1.14 | 0.95 | 8.4% | -14.2% | 8.9% | -2.85% |
+| HALF prob5 | 1.14 | 1.00 | 7.4% | -12.9% | 7.4% | -2.85% |
+| FULL prob5 | 1.14 | 0.96 | 8.6% | -14.7% | 9.1% | -3.02% |
+
+HALF dominates FULL: +0.05 Sharpe and -1.7% DD (HALF 1.00/-12.5% vs FULL
+0.95/-14.2%), IS identical. HALF prob5 same as HALF book (probationary
+adds nothing). Yearly: 2020 raw +32.8% -> V2 +4.2% -> HALF +23.5% -> FULL
++39.6%. HALF captures 60% of the forgone windfall at 1.4% extra DD (vs
+V2); FULL captures 100% at 3.1% extra DD. The -2% DD cost of FULL is
+duration of exposure beyond the joint days themselves — scaling to 0.5
+keeps most of the crisis convexity at lower gap risk. Probationary does
+not cap DD further.
+
+## 2) Tighter crude window
+
+| crude | thr | nOOS | nIS | IS Sh | OOS Sh | OOS DD |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| cr20 -15% | -0.15 | 32 | 0 | 1.14 | 0.95 | -14.2% |
+| cr10 -10% | -0.10 | 23 | 0 | 1.14 | 0.96 | -12.8% |
+| cr10 -15% | -0.15 | 9 | 0 | 1.14 | 0.95 | -13.6% |
+| voladj -1.5 | -- | 214 | -- | -- | 0.92 | -14.6% |
+| voladj -2.0 | -- | 230 | -- | -- | 0.91 | -14.8% |
+
+cr10 -10% (10-day crude return <= -10%) is slightly better than cr20
+-15%: 0.96/-12.8% vs 0.95/-14.2%, with fewer days (23 vs 32) and same IS
+safety. Vol-adjusted crude (crude10/vol) over-triggers (214 days) and
+hurts (0.92). The 10-day window is cleaner — a faster crude crash is the
+sharper crisis marker.
+
+## 3) Brent sleeve with per-complex + joint half
+
+CORE3BB (adds brent321 + brent_xs) per-complex with HALF joint:
+IS 0.61/-15.2% OOS 0.89/-15.2% vol6.6% vs CORE3 BOOK HALF IS 1.14 OOS
+1.00/-12.5%. Brent per-complex still does not beat CORE3 BOOK HALF on
+Sharpe at matched DD; raw widening 0.71->0.78 is again diluted by
+overlay frequency. Per-complex does not rescue Brent diversification at
+this vol — options-based tail or dedicated risk budget needed, as in
+Round 10.
+
+## Mechanism update
+
+The DD cost of JOINT is not the joint days themselves (0.8% of days) but
+the afterglow: FULL keeps 1.0 notional through the following drawdown days
+until the next V2 state change. Scaling to 0.5 during JOINT limits that
+afterglow to 0.5, so the book mean stays +0.89% vs grind but the
+worst-day afterglow is halved. cr10 -10% sharpens the crude leg by
+requiring a faster crash (10d -10% is steeper than 20d -15%), cutting
+false positives in 2014/2019.
+
+## vNext update
+
+book_vNext.py now supports --joint half and --joint half_prob5 and
+--crude window choice. Recommended vNext for max Sharpe+convexity with
+controlled DD is:
+
+  python book_vNext.py --joint half --cush off --cap nocap --overlay book
+  # IS 1.14/-10.3% OOS 1.00/-12.5% — Half captures 60% of 2020 windfall, +0.05 Sharpe over V2
+
+or with faster crude:
+
+  python book_vNext.py --joint half --crude-window cr10_10  # cr10 -10% variant 0.96/-12.8%
+
+Full joint remains the max-convexity option (0.95/-14.2%, 100% of 2020)
+for a higher DD budget. The gap coverage ledger now lists joint half as
+the cost-controlled crisis convexity layer.
+
+Artifacts: test_next_gaps.py (half/probationary/crude/Brent grid), updated
+book_vNext.py (--joint half/half_prob5, joint_scale param).

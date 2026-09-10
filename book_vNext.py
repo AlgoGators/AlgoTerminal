@@ -124,7 +124,7 @@ def build_joint_raw(depth: pd.Series, crude20: pd.Series) -> pd.Series:
     j = (crash5 >= THR_CRASH) & (held <= THR_DEPTH) & (crude20 <= THR_CRUDE)
     return j.fillna(False)
 
-def apply_overlay_prob(book: pd.Series, joint_raw: pd.Series | None, prob_n: int | None, vol_target=0.10, cut=-0.06, halt=-0.10) -> pd.Series:
+def apply_overlay_prob(book: pd.Series, joint_raw: pd.Series | None, prob_n: int | None, vol_target=0.10, cut=-0.06, halt=-0.10, joint_scale: float = 1.0) -> pd.Series:
     rv = book.rolling(20,min_periods=10).std().shift(1)*np.sqrt(252)
     gear = (vol_target/rv.replace(0.0,np.nan)).clip(upper=1.0).fillna(1.0)
     g = gear.shift(1).fillna(1.0)
@@ -142,7 +142,7 @@ def apply_overlay_prob(book: pd.Series, joint_raw: pd.Series | None, prob_n: int
         if joint_raw is not None and jv[t] and prob_n is not None:
             timer=prob_n
         if prob_n is not None and timer>0:
-            scale[t]=1.0
+            scale[t]=joint_scale
             timer-=1
             r=float(book.iloc[t])
             ret=r*float(g.iloc[t])*scale[t]
@@ -151,8 +151,8 @@ def apply_overlay_prob(book: pd.Series, joint_raw: pd.Series | None, prob_n: int
             state=1.0
             continue
         if joint_raw is not None and prob_n is None and jv[t]:
-            scale[t]=1.0
-            state=1.0
+            scale[t]=joint_scale
+            state=joint_scale
         else:
             scale[t]=state
         r=float(book.iloc[t])
@@ -163,7 +163,7 @@ def apply_overlay_prob(book: pd.Series, joint_raw: pd.Series | None, prob_n: int
         was=eng_hwm; eng_hwm=max(eng_hwm,eng_eq)
         new_high=eng_eq>=was
         if joint_raw is not None and prob_n is None and jv[t]:
-            state=1.0
+            state=joint_scale
         else:
             if state==1.0:
                 if exp_dd<=halt: state=0.0
@@ -190,7 +190,7 @@ def apply_overlay_per_complex(net: pd.DataFrame, subset: list[str], weights: dic
 def main():
     ap=argparse.ArgumentParser(description="vNext consolidated strategy")
     ap.add_argument("--subset", choices=["core3","core3bb"], default="core3", help="factor subset")
-    ap.add_argument("--joint", choices=["off","full","prob3","prob5","prob10"], default="off", help="joint crisis filter")
+    ap.add_argument("--joint", choices=["off","full","half","prob3","prob5","prob10","half_prob5"], default="off", help="joint crisis filter (half=0.5 re-cock)")
     ap.add_argument("--cush", choices=["off","s05","s07"], default="off", help="Cushing sizing for bzwti")
     ap.add_argument("--overlay", choices=["book","per"], default="book", help="DD overlay level")
     ap.add_argument("--cap", choices=["nocap","cap8","cap5"], default="nocap", help="gap cap")
@@ -200,10 +200,11 @@ def main():
 
     flist=SUBSETS[args.subset]
     capv=CAPS[args.cap]
-    joint_map={"off":None,"full":None,"prob3":3,"prob5":5,"prob10":10}
+    joint_map={"off":None,"full":None,"half":None,"prob3":3,"prob5":5,"prob10":10,"half_prob5":5}
     prob_n=joint_map[args.joint]
     use_joint=args.joint!="off"
     is_full=args.joint=="full"
+    joint_scale=0.5 if args.joint in ("half","half_prob5") else 1.0
 
     df=pd.read_parquet(PANEL).sort_index()
     levels=fb.build_levels(df)
@@ -267,8 +268,8 @@ def main():
     if args.overlay=="book":
         if use_joint:
             pn=prob_n  # None for full, int for prob
-            over_is=apply_overlay_prob(raw_is, joint_raw.reindex(raw_is.index).fillna(False) if joint_raw is not None else None, pn)
-            over_oos=apply_overlay_prob(raw_oos, joint_raw.reindex(raw_oos.index).fillna(False) if joint_raw is not None else None, pn)
+            over_is=apply_overlay_prob(raw_is, joint_raw.reindex(raw_is.index).fillna(False) if joint_raw is not None else None, pn, joint_scale=joint_scale)
+            over_oos=apply_overlay_prob(raw_oos, joint_raw.reindex(raw_oos.index).fillna(False) if joint_raw is not None else None, pn, joint_scale=joint_scale)
         else:
             over_is=b5.apply_overlay_v2(raw_is)
             over_oos=b5.apply_overlay_v2(raw_oos)
