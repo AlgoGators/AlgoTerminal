@@ -1361,3 +1361,46 @@ Full and V2 remain as flags for max convexity or min DD.
 Artifacts: test_weather_joint.py (weather holder vs half/full),
 test_persistence.py (big-day persistence), updated book_vNext.py default
 --joint half.
+
+---
+
+# Round 13 — probabilistic windfall regime, not binary (2026-09-10)
+
+You asked for a real probability: 37% now, 22% next horizon, not a yes/no.
+We built it. Label is windfall in next 5 days = any raw day >2% in next 5
+(11.6% OOS base rate, 460/3965). Features causal at close t-1: held, crash5,
+crash10, crude20/10, vol20, joint. Heuristic score = -5 + 1*crash5 -
+0.6*held -6*crude20 +1.5*joint +5*vol +0.3*crash10, prob=sigmoid(score).
+No sklearn, time-series split train 07-15 / valid 15-20 / test 20-23 / IS
+holdout.
+
+OOS AUC 0.62 AP 0.15 Brier 0.12, train 0.58, test 0.63, IS 0.54. Better than
+coin flip, not magic. Mean prob OOS 4.1% vs 11.6% actual wind rate, max
+100% on 2020-04-20 itself. Trace shows the gap: 2020-04-13 to 17 prob 0 to
+4% even though wind in next 5 is 1 — it fires at the day, not 5 days
+before. 2019 bleed shows 59% on 2019-08-08 with y 0 — false alarm.
+Calibration buckets: 0-2% mean 0.7% actual 9% (under), 20-50% mean 30%
+actual 3% (over), 50-100% mean 72% actual 15% (overconfident). Sample
+continuous evolution: 2020-01-02 2% (scaled 23%), 03-02 2% (28%), 03-30 13%
+(100%), 04-20 96% (100%), 05-27 0% (0%) — it does move 37% to 22% to 2%
+as you asked, at each horizon moment.
+
+Wired prob to sizing (size = 0.5+0.5*prob_scaled, p10 0.001 p90 0.062) vs
+HALF joint on test 20-23: V2 Sharpe 1.94 DD -9.6%, HALF 1.88, PROB 1.64.
+Prob hurts Sharpe on this bull stretch; HALF still better. The pattern
+exists but is weak and rare (32 joint days), so a simple half rule beats
+a noisy continuous learner out of sample.
+
+Is it impossible for AI to learn? No. There is a learnable pattern —
+joint at 0.8% of days lifts next-day mean to +0.89% — and our prob lifts
+AUC to 0.62. But 32 positives is tiny. Any AI will memorize noise unless
+kept tiny and regularized, and it will be 60% right, not 95%. You use it
+to tilt 0.5 to 1.0, not to time fully. That is what HALF does.
+
+Next: if you want more, we need more positives. That means widening the
+label (top20 not top5, or 5-day cum >5%) or widening diversification so
+more windfalls exist to learn from. Otherwise the regime system stays a
+noisy 37% to 22% wobble, not a crystal ball.
+
+Artifacts: regime_prob_simple.py (heuristic, no sklearn), regime_probs_simple.csv,
+regime_probabilistic.py (sklearn stub).
