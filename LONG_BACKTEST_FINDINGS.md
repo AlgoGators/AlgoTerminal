@@ -670,3 +670,45 @@ trim, 1-2 minutes).
 - `reverify.py` — champion/options/weather verification on restored panel.
 - algoterminal-data: `_providers/eia.py`, registered in __init__,
   SOURCE_DESCRIPTIONS, eia-energy-storage universe.
+
+---
+
+# Round 6 — EIA storage gates: the last fundamental lever, falsified (2026-09-10)
+
+Data: EIA Open Data API v2, keys now live in the algoterminal-data project
+secrets file (mode 600, git-ignored; load_project_env/api_key infra,
+commit d482d83). Provider series codes verified against the API:
+WGTSTUS1 (total gasoline), WDISTUS1 (distillate), WCESTUS1 (crude excl
+SPR), W_EPC0_SAX_YCUOK_MBBL (Cushing), WPULEUS3 (refinery utilization),
+natgas working gas = sum of storage-region codes (NATOTAL, history from
+2010). All petroleum series cover 2007-2026 weekly.
+
+Pre-registered hypotheses and results (causal signal: weekly value +
+6-day report lag, forward-filled, same-month z, gate decided at close t-1):
+
+- H1 product stocks (gasoline + distillate z > +1.0 -> de-risk crack_321
+  and cross_sectional). crack_321 OOS 0.40 -> 0.32. cross_sectional
+  0.59 -> 0.50. WORSE. The crush reversion is not product-stock-gated.
+- H2 natgas working storage (z > +1.0 -> de-risk ng). ng OOS 0.11 ->
+  -0.03. WORSE. Negative control: shuffled storage 0.49 vs real 0.51.
+  ZERO information.
+- H3 Cushing crude (z > +1.0 -> de-risk bzwti). bzwti OOS 0.25 -> 0.31,
+  MaxDD -41.8% -> -33.9%. Small standalone improvement, direction
+  consistent with the tank-tops story, but diluted in the book.
+- Books (v2 overlay, EQ): CORE3+Gprod 0.70 / -10.1%; CORE3+NG-S
+  0.51 / -13.2%. Champion (no gates) 0.95 / -11.1%. Gating loses.
+
+Conclusion: the final fundamental lever fails. Storage, utilization and
+weather conditioning do not extract more edge from this construction. The
+strategy's edge is genuinely price-only. CORE3 EQ + v2 overlay remains the
+champion: OOS Sharpe 0.95, MaxDD -11.1%, vol 6.6%.
+
+Remaining honest paths (all previously assessed):
+1. True forward test. The only source of genuinely new information. All
+   history tuned or selected the strategy.
+2. Options overlay: uneconomic at modeled premiums (Round 5).
+3. Accept this config for the price-only construction and stop.
+
+Artifacts: fetch_eia.py (verified codes), storage_gate.py, the repo
+provider eia.py (route mapping for stoc/wstk, natural-gas/stor/wkly,
+petroleum/pnp/wiup).

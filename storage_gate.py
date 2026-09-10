@@ -139,14 +139,14 @@ def main():
     isw = window(net, IS_START, df.index.max())
     oos = window(net, OOS_START, IS_START)
 
-    # storage z series
+    # storage z series (filenames from fetch_eia.py)
     z_all = {}
     for key, fname in [
-        ("gasoline", "W_EPM0F_SAX_NUS_MBBL"),
-        ("distillate", "W_EPD0_SAX_NUS_MBBL"),
-        ("crude", "W_EPC0_SAX_NUS_MBBL"),
-        ("cushing", "W_EPC0_SAX_YCX_MBBL"),
-        ("natgas", "NGW_EPG0_SWO_NUS_MMCF"),
+        ("gasoline", "WGTSTUS1"),
+        ("distillate", "WDISTUS1"),
+        ("crude", "WCESTUS1"),
+        ("cushing", "W_EPC0_SAX_YCUOK_MBBL"),
+        ("natgas", "NATOTAL"),
     ]:
         z_all[key] = weekly_z(Path(f"/tmp/eia_{fname}.csv"))
     avail = {k: v for k, v in z_all.items() if len(v) > 0}
@@ -176,7 +176,7 @@ def main():
         out.index = out.index + pd.Timedelta(days=6)
         return out.sort_index()
 
-    product_z = combined_z("W_EPM0F_SAX_NUS_MBBL", "W_EPD0_SAX_NUS_MBBL")
+    product_z = combined_z("WGTSTUS1", "WDISTUS1")
 
     # pre-registered gates: (factor, z series, hi, lo)
     gates = []
