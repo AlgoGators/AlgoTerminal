@@ -1434,6 +1434,58 @@ panel), panel_ext_1990.parquet, regime_advanced_probs.csv, regime_probs_simple.c
 
 ---
 
+# Round 15 — better features where windfalls come from (2026-09-10)
+
+You said we lack where windfalls come from. We added volume and term
+structure from yfinance (no new key) and built 40 features vs 29.
+
+New causal features: vol_spike (CL vol / mean), log_vol_z, vol_x_ret
+(volume spike * |return|), rb_spike, term_proxy (CL vs 60-day MA),
+roll_yield (20d roll), crack_term (crack vs MA), cross_dist (gap between
+most and second most crushed), kurt20, bzwti_slope, crack_slope5, plus
+lags.
+
+Volume fetched 6546 rows 2000-08-23 to 2026-09-09 (5 tickers, CL 7 NaNs,
+BZ 1789 before 2000). Panel_vol saved.
+
+Correlations with wind5 (train): vol_x_ret +0.156, crack_term -0.153,
+depth_abs +0.132, vol20 +0.163, crude -0.02 to +0.01 (tiny). New features
+carry more than old crash5 (+0.003) and crude20 (+0.01).
+
+CatBoost with 40 features (2000-2015 train, 2015-2020 valid, 2020-2023
+test, IS holdout):
+
+| split | AUC | AP | Brier | mean | max |
+| --- | --- | --- | --- | --- | --- |
+| train | 0.883 | 0.536 | 0.161 | 0.385 | 0.809 |
+| valid | 0.717 | 0.239 | 0.224 | 0.453 | 0.790 |
+| test | 0.735 | 0.251 | 0.169 | 0.362 | 0.773 |
+| IS hold | 0.651 | 0.231 | 0.219 | 0.438 | 0.766 |
+
+Before (29 features, XGB 0.667 test, 0.622 IS) — lift to 0.735 test
+(+0.07) and 0.651 IS (+0.03) from vol_x_ret, crack_term, bzwti_slope.
+Top expanded importance: vol20 25.7, crack_slope 13.5, vol60 9.7, ret20
+4.6, bzwti_slope 4.5, vol_x_ret 4.2, crack_term 3.0, held 2.9. Bottom:
+joint 0.0, crude20 0.0 — with vol and crack term, the old joint and
+crude drop to zero importance. The windfall is vol * return interaction
+and crack term mean reversion, not just crash+crude.
+
+Temporal sequence model: 20-day window flattened to 100 dims (held,
+crash5, crude20, vol20, log_vol_z last 20 days) with HGB — train 0.989
+AP 0.927 (memorizes), valid 0.679, test 0.638, hold 0.572. Worse than
+single-day CatBoost 0.735. Flattened sequence overfits; needs proper
+temporal wiring (LSTM/attention), not flat.
+
+So we found better features where windfalls come from: low crack term
+(deeply below its 60-day mean) plus high vol_x_ret (volume spike times
+absolute return) plus high vol. That is flow: volume confirms the panic
+move. Crude crash alone is not needed once vol and crack term are in.
+
+Artifacts: regime_better_features.py (40 features, volume/term),
+feature_importance_expanded.csv, panel_vol.parquet.
+
+---
+
 # Round 13 — probabilistic windfall regime, not binary (2026-09-10)
 
 You asked for a real probability: 37% now, 22% next horizon, not a yes/no.
