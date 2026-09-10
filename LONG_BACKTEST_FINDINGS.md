@@ -333,3 +333,116 @@ those bleeds into flat recovery years at the cost of some CAGR.
 - `control_test.py` — negative control (shuffled / iid).
 - `book_oos_v4_results.csv` — 72-row design-space table.
 - `debug_*.py` — the diagnostics that found G1/G2/G3.
+---
+
+# Round 3 — honest assessment: why the edge is thin, what is still wrong
+
+Date: 2026-09-10. Diagnostic pass over the current version. Script:
+`diag_assessment.py`. Purpose: answer "where do the gaps hold, why is it
+not extracting more edge, why is it not succeeding stronger?"
+
+## The character of the edge (what the strategy actually is)
+
+The 16y window shows the book is not a steady 0.9-Sharpe engine. It is a
+crisis-reversion book with a slow bleed in normal regimes:
+
+- 77% of the OOS total return (+187%) came from 5 of 16 years: 2008, 2020,
+  2021, 2022, 2023. Only 2 years were negative: 2013 (-23.1%), 2019
+  (-15.3%).
+- 32% of the total OOS return came from the top-5 single days: 2020-04-20
+  +21.1% (negative WTI), 2010-03-01 +13.8%, 2008-09-23 +10.5%.
+- Rolling 3y Sharpe swings from -0.17 (2015) to +2.40 (2023). The average
+  is positive; the variance across regimes is huge.
+
+The edge is real but lumpy. The Sharpe is a thin average over a bimodal
+regime distribution. That is the honest ceiling of this construction:
+even in-sample the corrected raw book is 1.31, not the recorded 2.63.
+
+## Why it is not extracting more edge
+
+1. The signal is binary and slow. Entry at z < -0.75, exit at z >= -0.5.
+   It does not size by crush depth, does not scale in or out, and uses no
+   information beyond the price level. A deeper crush gets the same bet.
+2. The cross-section is too narrow. F2 ranks 3 legs of one complex.
+   Cross-sectional crush across complexes (Brent 3:2:1, Singapore
+   distillates, jet, naphtha) would be genuinely independent and could
+   raise the book Sharpe by real diversification. Current: 2 bets.
+3. The diversification math is overstated. The recorded "max pairwise
+   correlation 0.25, most 0.00-0.10" came from the buggy basis. Honest
+   correlations: crack_321 vs cross_sectional 0.34 OOS (0.30 IS), cross
+   vs bzwti -0.25 OOS. The book is really crack-complex long + crude-basis
+   hedger, two independent bets, not five. The 2.63-compounding rationale
+   in EDGE_RATIONALE.md does not survive the corrected basis.
+4. Sizing is crude. The per-factor vol target is rarely active: MAX_LEV
+   = 1.0 binds first. ng sits at the 1.0 cap 60% of its on-days, crack_ho
+   39%, cross_sectional 26%. A 1.0-notional crack position turned a real
+   -18% level day (2019-09-03) into an -18% book day. The engine is
+   "full notional when the signal is on", not vol-targeted.
+5. Regime blindness. There is no conditioning on energy vol, margin
+   compression, or fundamentals. 2013 and 2019 are exactly the compression
+   regimes a simple regime gate would avoid. The data infra in
+   algoterminal-data (storage, weather, utilization) is unused.
+6. The overlay caps the upside it was built to protect. The DD overlay
+   de-risks during the exact regimes where the strategy makes its money.
+   It sat flat on 2020-04-20 (raw +21.1%), 2018-07-23 (+7.5%), 2017-03-01
+   (+7.2%). Of the top-5 day P&L (+60.2% raw), the overlay captured
+   +13.1%. Net: Sharpe up (0.71 -> 0.95), CAGR down (11.1% -> 6.3%), and
+   the 2020 windfall is mostly forgone. This is the hidden premium of the
+   -10% DD cap.
+
+## What is still wrong in the current version
+
+1. Selection on OOS. CORE3 was chosen after seeing OOS. FULL EQ overlay
+   is OOS Sh 0.75; CORE3 is 0.95. The 0.20 gap is selection gain. The
+   honest post-selection expectation is ~0.75-0.8, not 0.95.
+2. No true post-development data. Every year in the panel either tuned
+   or selected the strategy. Real out-of-sample starts now. The "16y OOS"
+   is pre-sample history, not a forward test.
+3. Roll economics are unmodeled state. A fixed 20bps/yr drag ignores
+   contango/backwardation. A long-biased book in backwardation earns the
+   roll; in contango it bleeds. The synthetic back-adjusted series hides
+   this P&L source.
+4. Fills are optimistic. 5bps/side is thin in stress regimes, and the
+   crack legs roll monthly at the front month with real bid-offer width.
+   No official settlement prices; backtest uses yfinance closes.
+5. The gap tail is reduced, not bounded. A synchronized energy shock can
+   still cost -3% in a day at 6.6% vol. Options overlay is still open.
+6. Regime samples are thin per episode. crack_321 makes ~90 trades over
+   16y (~5.6/yr). The thesis rests on roughly a dozen crisis episodes.
+   Multi-decade helps, but the per-regime evidence is narrow.
+
+## What is NOT wrong
+
+- The G1-G3 measurement fixes are solid and survive scrutiny.
+- The overlay is validated by negative controls: shuffled returns destroy
+  its benefit (0.71 -> 0.36), iid noise collapses it (0.54 -> 0.15). It
+  exploits real drawdown clustering.
+- Equal weights are robust; the honest correlations and the OOS evidence
+  both reject IS-tuned inverse-vol weights.
+- The seasonal-crush thesis has a real, positive, decade-long OOS edge.
+  Thin, but it is edge, not overfit backtest noise.
+
+## Where the next real gains are
+
+1. Make the DD de-lever regime-aware. Keep participation through extreme
+   crush episodes (the 2020 type), de-risk only in slow-bleed regimes
+   (the 2013/2019 type). This attacks the single biggest cost: the
+   overlay currently forgives the crisis windfalls that drive the edge.
+2. Use the fundamentals the data infra already has as gating: storage
+   direction, refinery utilization, weather, for the legs where they
+   matter (cracks, NG). Gate, do not forecast. Strict OOS discipline.
+3. Widen the cross-section across complexes. Genuine independence is the
+   only free Sharpe.
+4. Fix sizing at the engine: bind the vol target (lower MAX_LEV, or
+   regime-scaled caps) so gap days are damped at the source and the
+   kurtosis shrinks before the overlay has to eat it.
+5. Correlation-aware weights with heavy shrinkage. With the honest matrix
+   (0.34 / -0.25 / 0.02), a risk-parity book would not run crack-complex-
+   heavy at 1/3-1/3-1/3.
+6. Pre-register the next decisions. The only true test is forward. Write
+   the rule now, run it on new data, do not tune on what you see.
+
+## Artifacts (Round 3)
+
+- `diag_assessment.py` — the diagnostics behind this section: saturation,
+  concentration, rolling Sharpe, selection gap, overlay capture.
