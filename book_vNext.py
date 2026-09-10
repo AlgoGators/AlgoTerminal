@@ -190,7 +190,7 @@ def apply_overlay_per_complex(net: pd.DataFrame, subset: list[str], weights: dic
 def main():
     ap=argparse.ArgumentParser(description="vNext consolidated strategy")
     ap.add_argument("--subset", choices=["core3","core3bb"], default="core3", help="factor subset")
-    ap.add_argument("--joint", choices=["off","full","half","prob3","prob5","prob10","half_prob5"], default="off", help="joint crisis filter (half=0.5 re-cock)")
+    ap.add_argument("--joint", choices=["off","full","half","prob3","prob5","prob10","half_prob5"], default="half", help="joint crisis filter (half=0.5 re-cock)")
     ap.add_argument("--cush", choices=["off","s05","s07"], default="off", help="Cushing sizing for bzwti")
     ap.add_argument("--overlay", choices=["book","per"], default="book", help="DD overlay level")
     ap.add_argument("--cap", choices=["nocap","cap8","cap5"], default="nocap", help="gap cap")

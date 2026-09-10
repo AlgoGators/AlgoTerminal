@@ -1291,3 +1291,73 @@ the cost-controlled crisis convexity layer.
 
 Artifacts: test_next_gaps.py (half/probationary/crude/Brent grid), updated
 book_vNext.py (--joint half/half_prob5, joint_scale param).
+
+---
+
+# Round 12 — weather as holder and persistence (2026-09-10)
+
+Covers the two windfall-staying ideas you raised: weather as a holder
+during joint, and staying after a big print.
+
+## Weather as holder during joint
+
+Setup: when JOINT fires (32 OOS days), keep 1.0 if HDD z > thr else 0.5.
+HDD z from NASA POWER (NYC, same-month expanding z, causal, ffilled to
+daily). Tested thr 0.0/0.5/1.0 vs HALF (0.5) and FULL (1.0) and V2.
+
+| variant | IS Sh | OOS Sh | OOS DD | nJoint |
+| --- | --- | --- | --- | --- |
+| V2 | 1.13 | 0.95 | -11.1% | 0 |
+| HALF (0.5) | 1.14 | 1.00 | -12.5% | 32 |
+| FULL (1.0) | 1.14 | 0.95 | -14.2% | 32 |
+| Weather thr 0.0 | 1.14 | 0.94 | -12.1% | 32 |
+| Weather thr 0.5 | 1.14 | 0.99 | -13.1% | 32 |
+| Weather thr 1.0 | 1.14 | 0.99 | -12.8% | 32 |
+
+Weather adds nothing. At best it matches HALF (0.99 vs 1.00), at worst
+0.94. Warm joint days actually pay more than cold joint days in this
+test: warm joint +1.06% vs cold joint +0.26%, joint days mean weather z
+-0.20 vs all -0.09 (joint is warm, not cold). Yearly 2020: weather0.5
++24.5% vs half +23.5% vs full +39.6% — weather adds 1% in 2020 but loses
+elsewhere. The 2020 windfall was crude panic, not cold weather.
+
+We did not use windfall return as a signal (lookahead). Joint is price
+path before the day (crash5, depth, crude); windfall is outcome tomorrow.
+Weather as a cutter before entry already lost (shuffled 0.80 vs real 0.77
+in Round 5). Weather as a holder during crisis also loses here.
+
+## Windfall persistence: stay after a big up day
+
+Idea: after the book prints a big up (>2% day or 5-day >5%), stay
+invested 5 days at 1.0 or 0.5, expecting momentum.
+
+| variant | IS Sh | OOS Sh | OOS DD | OOS CAGR |
+| --- | --- | --- | --- | --- | --- |
+| V2 | 1.13 | 0.95 | -11.1% | 6.3% |
+| HALF joint | 1.14 | 1.00 | -12.5% | 7.2% |
+| persist big2>2% 5d full | 1.14 | 0.61 | -28.2% | 4.3% |
+| persist big2 5d half | 1.14 | 0.65 | -19.6% | 4.0% |
+| persist big5>5% 5d half | 1.14 | 0.91 | -12.9% | 6.1% |
+| joint half + big2 half | 1.14 | 0.83 | -19.7% | 5.8% |
+
+After a big day the next day does average a little higher (+0.136% vs
++0.047% all, n=112 for >2%; +0.201% for >5% 5-day), but staying 5 days
+keeps you through the next bleed: 2019 -11.9% vs V2 -0.9%, 2014 -9.2% vs
+0%, and even 2020 persistence only +8.9% vs half +23.5%. Persistence
+keeps the bleed, not just the windfall.
+
+## What this says
+
+The staying problem is solved better by halving the joint bet (HALF) than
+by any weather or persistence overlay. Joint half is the only holder that
+beats V2 on Sharpe at controlled DD and keeps IS safe. Weather is a
+wrong proxy for a crude panic. Persistence is momentum chasing in a
+mean-reversion book.
+
+vNext default now HALF. Run book_vNext.py with no flags and you get
+IS 1.14/-10.3% OOS 1.00/-12.5% — the half crisis convexity layer.
+Full and V2 remain as flags for max convexity or min DD.
+
+Artifacts: test_weather_joint.py (weather holder vs half/full),
+test_persistence.py (big-day persistence), updated book_vNext.py default
+--joint half.
