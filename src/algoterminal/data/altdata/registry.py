@@ -23,12 +23,19 @@ from algoterminal.data.altdata.world_bank import COUNTRIES as _WB_COUNTRIES
 from algoterminal.data.altdata.world_bank import INDICATORS as _WB_INDICATORS
 from algoterminal.data.altdata.world_bank import WorldBankProvider
 from algoterminal.data.composite_provider import CompositeProvider
+from algoterminal.data.derived_provider import SYMBOLS as _DERIVED_SYMBOLS
+from algoterminal.data.derived_provider import DerivedProvider
 from algoterminal.data.provider import DataProvider
 from algoterminal.data.stooq_provider import StooqProvider
 from algoterminal.data.yfinance_provider import YFinanceProvider
 
 SOURCE_DESCRIPTIONS: dict[str, str] = {
     "market": "Yahoo Finance / Stooq — free, delayed market OHLCV price data.",
+    "derived": (
+        "Derived — synthetic price levels computed from a formula over other instruments' "
+        "closes (spreads, crack margins, basis), so they can be backtested like any other "
+        "single-instrument price series."
+    ),
     "nasa-power": (
         "NASA POWER — satellite & reanalysis meteorological and solar data by location, "
         "from NASA Langley Research Center. Free, no API key required."
@@ -55,6 +62,8 @@ SOURCE_DESCRIPTIONS: dict[str, str] = {
 
 def provider_for_source(source: str) -> DataProvider:
     """Resolve a universe's `source` key to the DataProvider that fetches it."""
+    if source == "derived":
+        return DerivedProvider()
     if source == "nasa-power":
         return NasaPowerProvider()
     if source == "usgs-earthquake":
@@ -76,6 +85,8 @@ def describe_symbol(source: str, symbol: str) -> str:
     Returns "" for market symbols — those are described via yfinance
     instrument metadata (see `algoterminal.data.metadata`) instead.
     """
+    if source == "derived":
+        return _DERIVED_SYMBOLS.get(symbol.upper(), "")
     if source == "nasa-power":
         loc = _NASA_LOCATIONS.get(symbol.upper())
         return loc[2] if loc else ""

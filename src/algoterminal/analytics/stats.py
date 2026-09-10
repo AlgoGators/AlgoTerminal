@@ -129,7 +129,13 @@ def performance_stats(
     if positions is not None:
         active = returns[positions.shift(1).fillna(0) != 0]
         win_rate = float((active > 0).mean()) if len(active) else 0.0
-        n_trades = int((positions.diff().fillna(positions.iloc[0] if len(positions) else 0) != 0).sum())
+        # Distinct trades: transitions into a position or across zero (a
+        # reversal), not every day a vol-targeted position's *size* changes
+        # -- the latter double/triple-counts one continuous hold as many
+        # "trades" whenever sizing is continuously rescaled.
+        prev = positions.shift(1).fillna(0.0)
+        entered = (np.sign(prev) != np.sign(positions)) & (positions != 0)
+        n_trades = int(entered.sum())
 
     return PerformanceStats(
         cagr=cagr,

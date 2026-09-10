@@ -18,7 +18,17 @@ from algoterminal.charts.mpl_charts import (
     line_chart,
     step_chart,
 )
-from algoterminal.data import default_provider
+from algoterminal.composite.engine import (
+    CompositeBacktestResult,
+    CompositeError,
+    has_composite_backtest,
+    load_composite_backtest,
+    run_composite_backtest,
+    save_composite_backtest,
+)
+from algoterminal.composite.storage import CompositeRecord, list_composite_slugs, list_composite_versions
+from algoterminal.composite.writeup import generate_composite_writeup
+from algoterminal.data import provider_for_source
 from algoterminal.research.backtest import (
     BacktestResult,
     has_backtest_result,
@@ -28,12 +38,15 @@ from algoterminal.research.backtest import (
 )
 from algoterminal.research.data_stage import load_quality_reports, pull_and_validate, save_quality_reports
 from algoterminal.research.methodology import load_strategy_module, scaffold_strategy
-from algoterminal.research.storage import ResearchRecord, list_versions
+from algoterminal.research.storage import ResearchRecord, list_slugs, list_versions
 from algoterminal.research.writeup import generate_writeup
 from algoterminal.timeframe import DEFAULT_TIMEFRAME, TIMEFRAME_OPTIONS, resolve_timeframe
+from algoterminal.tui.screens.composite_modal import CompositeModal
 from algoterminal.tui.screens.hypothesis_modal import HypothesisModal
 from algoterminal.tui.widgets.plot_view import PlotView
 from algoterminal.tui.widgets.thinking_indicator import ThinkingIndicator
+
+_NO_COMPOSITE_BACKTEST_MESSAGE = "No combined backtest run yet. Select a composite and press Run Backtest."
 
 _NO_BACKTEST_MESSAGE = "No backtest run yet. Select a record and press Run Data+Backtest."
 
@@ -65,16 +78,32 @@ class ResearchPane(Horizontal):
         super().__init__()
         self._records: list[ResearchRecord] = []
         self._selected: ResearchRecord | None = None
+        self._composites: list[CompositeRecord] = []
+        self._selected_composite: CompositeRecord | None = None
+        # Which selection drives the shared detail/charts pane on the right --
+        # a single-instrument record or a composite -- since both tables can
+        # hold a row selection at once but only one should be "active."
+        self._mode: str = "single"
 
     def compose(self) -> ComposeResult:
         with VerticalScroll(id="records-col"):
-            yield DataTable(id="records-table", cursor_type="row")
-            with Horizontal(id="research-buttons"):
-                yield Button("New (n)", id="new-hyp")
-                yield Button("Run Data+Backtest (r)", id="run-cycle")
-                yield Button("Writeup (w)", id="gen-writeup")
-                yield Select(TIMEFRAME_OPTIONS, value=DEFAULT_TIMEFRAME, allow_blank=False, id="research-timeframe")
-            yield ThinkingIndicator(id="research-thinking", words=_RESEARCH_WORDS)
+            with TabbedContent(id="strategy-kind-tabs"):
+                with TabPane("Single Strategies", id="tab-single-strats"):
+                    yield DataTable(id="records-table", cursor_type="row")
+                    with Horizontal(id="research-buttons"):
+                        yield Button("New (n)", id="new-hyp")
+                        yield Button("Run Data+Backtest (r)", id="run-cycle")
+                        yield Button("Writeup (w)", id="gen-writeup")
+                        yield Select(
+                            TIMEFRAME_OPTIONS, value=DEFAULT_TIMEFRAME, allow_blank=False, id="research-timeframe"
+                        )
+                    yield ThinkingIndicator(id="research-thinking", words=_RESEARCH_WORDS)
+                with TabPane("Cumulative Strategies", id="tab-cumulative-strats"):
+                    yield DataTable(id="composite-table", cursor_type="row")
+                    with Horizontal(id="composite-buttons"):
+                        yield Button("New Composite", id="new-composite")
+                        yield Button("Run Backtest", id="run-composite-backtest")
+                        yield Button("Writeup", id="gen-composite-writeup")
         with Vertical(id="detail-col"):
             yield VerticalScroll(Markdown(id="record-detail"), id="record-detail-scroll")
             with TabbedContent(id="charts-tabs"):
@@ -96,11 +125,12 @@ class ResearchPane(Horizontal):
     def on_mount(self) -> None:
         table = self.query_one("#records-table", DataTable)
         table.add_columns("Nickname", "Version", "Title", "Backtested")
+        composite_table = self.query_one("#composite-table", DataTable)
+        composite_table.add_columns("Nickname", "Version", "Legs", "Weighting", "Backtested")
         self.refresh_records()
+        self.refresh_composites()
 
     def refresh_records(self) -> None:
-        from algoterminal.research.storage import list_slugs
-
         self._records = []
         table = self.query_one("#records-table", DataTable)
         table.clear()
@@ -114,9 +144,33 @@ class ResearchPane(Horizontal):
                 self._records.append(record)
                 table.add_row(record.slug, record.version, title, "yes" if has_backtest_result(record) else "no")
 
+    def refresh_composites(self) -> None:
+        self._composites = []
+        table = self.query_one("#composite-table", DataTable)
+        table.clear()
+        for slug in list_composite_slugs():
+            for record in list_composite_versions(slug):
+                try:
+                    composite = record.load_composite()
+                    legs = ", ".join(composite.legs)
+                    weighting = composite.weighting
+                except Exception:
+                    legs, weighting = "(unreadable)", ""
+                self._composites.append(record)
+                table.add_row(
+                    record.slug, record.version, legs, weighting, "yes" if has_composite_backtest(record) else "no"
+                )
+
     def on_data_table_row_selected(self, event: DataTable.RowSelected) -> None:
         row_index = event.cursor_row
+        if event.data_table.id == "composite-table":
+            if 0 <= row_index < len(self._composites):
+                self._mode = "composite"
+                self._selected_composite = self._composites[row_index]
+                self._render_composite_detail()
+            return
         if 0 <= row_index < len(self._records):
+            self._mode = "single"
             self._selected = self._records[row_index]
             self._render_detail()
 
@@ -190,7 +244,7 @@ class ResearchPane(Horizontal):
             monthly_table.update(_NO_BACKTEST_MESSAGE)
             dd_periods_widget.update(_NO_BACKTEST_MESSAGE)
 
-    def _render_charts(self, result: BacktestResult, title: str) -> None:
+    def _render_charts(self, result: BacktestResult | CompositeBacktestResult, title: str) -> None:
         equity_chart = self.query_one("#equity-chart", PlotView)
         dd_chart = self.query_one("#drawdown-chart", PlotView)
         monthly_table = self.query_one("#monthly-returns-table", Static)
@@ -220,8 +274,80 @@ class ResearchPane(Horizontal):
         else:
             dist_chart.show_message("No non-zero returns to plot yet.")
 
-        exposure_chart.show_chart(step_chart, result.positions, title="Position Exposure")
+        positions = getattr(result, "positions", None)
+        if positions is not None:
+            exposure_chart.show_chart(step_chart, positions, title="Position Exposure")
+        else:
+            exposure_chart.show_message("N/A for a composite -- see each leg's own record for its exposure.")
         dd_periods_widget.update(drawdown_periods_table(drawdown_periods(result.equity_curve)))
+
+    def _render_composite_detail(self) -> None:
+        record = self._selected_composite
+        detail = self.query_one("#record-detail", Markdown)
+        chart_widgets = [
+            self.query_one("#equity-chart", PlotView),
+            self.query_one("#drawdown-chart", PlotView),
+            self.query_one("#rolling-sharpe-chart", PlotView),
+            self.query_one("#distribution-chart", PlotView),
+            self.query_one("#exposure-chart", PlotView),
+        ]
+        monthly_table = self.query_one("#monthly-returns-table", Static)
+        dd_periods_widget = self.query_one("#dd-periods-table", Static)
+
+        if record is None:
+            detail.update("*No composite selected.*")
+            for widget in chart_widgets:
+                widget.show_message("")
+            monthly_table.update("")
+            dd_periods_widget.update("")
+            return
+
+        composite = record.load_composite()
+        lines = [
+            f"# {composite.title}",
+            f"`{record.slug}/{record.version}` (cumulative)",
+            "",
+            f"**Thesis:** {composite.thesis or 'None recorded.'}",
+            "",
+            f"**Legs:** {', '.join(composite.legs)}",
+            f"**Weighting:** {composite.weighting}",
+        ]
+
+        has_result = has_composite_backtest(record)
+        if has_result:
+            result = load_composite_backtest(record)
+            stats = result.stats
+            lines += [
+                "",
+                "## Combined Backtest",
+                "",
+                f"- CAGR: {stats.cagr:.2%}",
+                f"- Sharpe: {stats.sharpe:.2f}",
+                f"- Sortino: {stats.sortino:.2f}",
+                f"- Max Drawdown: {stats.max_drawdown:.2%}",
+                f"- Total Return: {stats.total_return:.2%}",
+                f"- Total Leg Trades: {result.total_leg_trades}",
+                "",
+                "| Leg | Weight | Sharpe | Max DD |",
+                "| --- | --- | --- | --- |",
+            ]
+            for leg in result.legs:
+                lines.append(f"| {leg.slug} | {leg.weight:.1%} | {leg.stats.sharpe:.2f} | {leg.stats.max_drawdown:.2%} |")
+        else:
+            lines += ["", f"*{_NO_COMPOSITE_BACKTEST_MESSAGE}*"]
+
+        if record.writeup_path.exists():
+            lines += ["", "## Writeup", "", "*Generated — see `writeup.md` in the composite record directory.*"]
+
+        detail.update("\n".join(lines))
+
+        if has_result:
+            self._render_charts(result, composite.title)
+        else:
+            for widget in chart_widgets:
+                widget.show_message(_NO_COMPOSITE_BACKTEST_MESSAGE)
+            monthly_table.update(_NO_COMPOSITE_BACKTEST_MESSAGE)
+            dd_periods_widget.update(_NO_COMPOSITE_BACKTEST_MESSAGE)
 
     def on_button_pressed(self, event: Button.Pressed) -> None:
         if event.button.id == "new-hyp":
@@ -230,6 +356,12 @@ class ResearchPane(Horizontal):
             self.action_run_cycle()
         elif event.button.id == "gen-writeup":
             self.action_generate_writeup()
+        elif event.button.id == "new-composite":
+            self.action_new_composite()
+        elif event.button.id == "run-composite-backtest":
+            self.action_run_composite_backtest()
+        elif event.button.id == "gen-composite-writeup":
+            self.action_generate_composite_writeup()
 
     def action_new_hypothesis(self) -> None:
         self.app.push_screen(HypothesisModal(), self._on_hypothesis_created)
@@ -255,7 +387,7 @@ class ResearchPane(Horizontal):
     def _run_cycle(self, record: ResearchRecord, start: date, end: date) -> None:
         try:
             hypothesis = record.load_hypothesis()
-            provider = default_provider()
+            provider = provider_for_source(hypothesis.source)
 
             data, reports = pull_and_validate(hypothesis, provider, start, end)
             save_quality_reports(record, reports)
@@ -270,7 +402,7 @@ class ResearchPane(Horizontal):
 
             try:
                 strategy = load_strategy_module(record.strategy_path)
-                result = run_backtest(strategy, data[primary]["close"])
+                result = run_backtest(strategy, data[primary]["close"], is_level=hypothesis.source == "derived")
             except ModuleNotFoundError as exc:
                 package = _PACKAGE_NAME_OVERRIDES.get(exc.name, exc.name)
                 self.app.call_from_thread(
@@ -313,4 +445,47 @@ class ResearchPane(Horizontal):
         result = load_backtest_result(record)
         generate_writeup(record, hypothesis, reports, result)
         self._render_detail()
+        self.notify(f"Writeup written to {record.writeup_path}")
+
+    def action_new_composite(self) -> None:
+        available = sorted({r.slug for r in self._records})
+        self.app.push_screen(CompositeModal(available), self._on_composite_created)
+
+    def _on_composite_created(self, record: CompositeRecord | None) -> None:
+        if record is None:
+            return
+        self.refresh_composites()
+        self.notify(f"Saved composite {record.slug}/{record.version}")
+
+    def action_run_composite_backtest(self) -> None:
+        if self._selected_composite is None:
+            self.notify("Select a composite first.", severity="warning")
+            return
+        record = self._selected_composite
+        composite = record.load_composite()
+        try:
+            result = run_composite_backtest(composite.legs, composite.weighting)
+        except CompositeError as exc:
+            self.notify(str(exc), severity="error")
+            return
+        save_composite_backtest(record, result)
+        self.refresh_composites()
+        self._mode = "composite"
+        self._selected_composite = record
+        self._render_composite_detail()
+        self.notify(f"Combined backtest complete for {record.slug}/{record.version}.")
+
+    def action_generate_composite_writeup(self) -> None:
+        if self._selected_composite is None:
+            self.notify("Select a composite first.", severity="warning")
+            return
+        record = self._selected_composite
+        if not has_composite_backtest(record):
+            self.notify("Run Backtest before generating a writeup.", severity="warning")
+            return
+
+        composite = record.load_composite()
+        result = load_composite_backtest(record)
+        generate_composite_writeup(record, composite, result)
+        self._render_composite_detail()
         self.notify(f"Writeup written to {record.writeup_path}")

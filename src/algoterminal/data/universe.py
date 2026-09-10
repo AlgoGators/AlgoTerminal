@@ -189,6 +189,17 @@ _BUILTIN_UNIVERSES: list[Universe] = [
         symbols=["BNB-USD", "XRP-USD", "ADA-USD", "DOGE-USD", "AVAX-USD", "LINK-USD", "LTC-USD", "DOT-USD"],
         description="Large-cap alternative cryptoassets vs. USD",
     ),
+    # --- Derived: synthetic spread/margin levels ----------------------------
+    Universe(
+        name="crack-spreads",
+        asset_class=AssetClass.CUSTOM,
+        source="derived",
+        symbols=["CRACK321", "CRACKGAS", "CRACKHO", "BZWTI"],
+        description=(
+            "Refining-margin crack spreads and the Brent-WTI crude basis, computed from "
+            "CL/RB/HO/BZ futures closes — synthetic levels, not directly tradable tickers"
+        ),
+    ),
     # --- Alt-data: NASA POWER (satellite weather/solar) --------------------
     Universe(
         name="nasa-power-global-cities",
@@ -380,3 +391,12 @@ class UniverseStore:
             return self.load(name_or_symbols).symbols
         except KeyError:
             return [s.strip() for s in name_or_symbols.split(",") if s.strip()]
+
+    def resolve_source(self, name_or_symbols: str) -> str:
+        """The DataProvider source key for a universe name, or "market" if the
+        input isn't a known universe (a raw comma-separated symbol list).
+        """
+        try:
+            return self.load(name_or_symbols).source
+        except KeyError:
+            return "market"

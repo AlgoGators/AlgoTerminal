@@ -25,6 +25,11 @@ class Hypothesis:
     risk_notes: str = ""
     author: str = ""
     created_at: str = field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
+    # Which DataProvider fetches `symbols`: "market" (the default) or one of
+    # the alt-data source keys in `algoterminal.data.altdata.registry` (e.g.
+    # "derived", "nasa-power"). Copied from the resolved Universe at wizard
+    # time so `data`/`backtest` don't have to re-resolve the universe name.
+    source: str = "market"
 
     @property
     def slug(self) -> str:
@@ -41,6 +46,7 @@ class Hypothesis:
             "risk_notes": self.risk_notes,
             "author": self.author,
             "created_at": self.created_at,
+            "source": self.source,
         }
 
     @classmethod
@@ -55,4 +61,5 @@ class Hypothesis:
             risk_notes=data.get("risk_notes", ""),
             author=data.get("author", ""),
             created_at=data.get("created_at", ""),
+            source=data.get("source", "market"),
         )

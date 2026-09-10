@@ -83,7 +83,8 @@ class HypothesisModal(ModalScreen[tuple[Hypothesis, ResearchRecord] | None]):
             self.notify("Title, thesis, universe, and expected edge are required.", severity="error")
             return
 
-        symbols = UniverseStore().resolve(universe)
+        store = UniverseStore()
+        symbols = store.resolve(universe)
         hypothesis = Hypothesis(
             title=title,
             thesis=thesis,
@@ -92,6 +93,7 @@ class HypothesisModal(ModalScreen[tuple[Hypothesis, ResearchRecord] | None]):
             expected_edge=expected_edge,
             asset_class=asset_class,
             risk_notes=risk_notes,
+            source=store.resolve_source(universe),
         )
         record = create_record(hypothesis)
         self.dismiss((hypothesis, record))

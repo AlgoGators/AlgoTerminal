@@ -32,6 +32,7 @@ def run_hypothesis_wizard(console: Console | None = None) -> tuple[Hypothesis, R
     console.print(f"Known universes: {', '.join(known)}")
     universe = Prompt.ask("Universe (name, or comma-separated symbols)")
     symbols = store.resolve(universe)
+    source = store.resolve_source(universe)
 
     asset_class_value = Prompt.ask(
         "Asset class",
@@ -51,6 +52,7 @@ def run_hypothesis_wizard(console: Console | None = None) -> tuple[Hypothesis, R
         asset_class=AssetClass(asset_class_value),
         risk_notes=risk_notes,
         author=author,
+        source=source,
     )
     record = create_record(hypothesis)
     console.print(f"\n[success]Saved research record:[/success] {record.slug}/{record.version}")

@@ -86,9 +86,12 @@ class AlgoTerminalApp(App):
         rendered Rich Table, so the scrollbar has real content to scroll. */
         width: auto;
     }
-    #research-buttons {
+    #research-buttons, #composite-buttons {
         height: auto;
         padding: 1 0;
+    }
+    #strategy-kind-tabs {
+        height: auto;
     }
     #research-buttons Select {
         width: 22;

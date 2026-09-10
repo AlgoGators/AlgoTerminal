@@ -22,9 +22,11 @@ app = typer.Typer(
 universe_app = typer.Typer(help="Manage named instrument baskets (universes).")
 compare_app = typer.Typer(help="Cross-asset comparison tools.")
 cache_app = typer.Typer(help="Manage the local data cache.")
+composite_app = typer.Typer(help="Composite strategies built by combining other saved strategies.")
 app.add_typer(universe_app, name="universe")
 app.add_typer(compare_app, name="compare")
 app.add_typer(cache_app, name="cache")
+app.add_typer(composite_app, name="composite")
 
 
 @app.callback(invoke_without_command=True)
@@ -65,12 +67,12 @@ def _resolve_record(slug: str, version: Optional[str]):
 @app.command()
 def data(slug: str, version: Optional[str] = typer.Option(None, help="Specific record version; defaults to latest")) -> None:
     """Pull and validate data for a saved hypothesis."""
-    from algoterminal.data import default_provider
+    from algoterminal.data import provider_for_source
     from algoterminal.research.data_stage import pull_and_validate, save_quality_reports
 
     record = _resolve_record(slug, version)
     hyp = record.load_hypothesis()
-    _, reports = pull_and_validate(hyp, default_provider())
+    _, reports = pull_and_validate(hyp, provider_for_source(hyp.source))
     save_quality_reports(record, reports)
 
     for r in reports:
@@ -81,7 +83,7 @@ def data(slug: str, version: Optional[str] = typer.Option(None, help="Specific r
 @app.command()
 def backtest(slug: str, version: Optional[str] = typer.Option(None, help="Specific record version; defaults to latest")) -> None:
     """Scaffold (if needed) and run the backtest for a saved hypothesis."""
-    from algoterminal.data import default_provider
+    from algoterminal.data import provider_for_source
     from algoterminal.research.backtest import run_backtest, save_backtest_result
     from algoterminal.research.data_stage import pull_and_validate, save_quality_reports
     from algoterminal.research.methodology import load_strategy_module, scaffold_strategy
@@ -90,7 +92,7 @@ def backtest(slug: str, version: Optional[str] = typer.Option(None, help="Specif
     record = _resolve_record(slug, version)
     hyp = record.load_hypothesis()
 
-    provider_data, reports = pull_and_validate(hyp, default_provider())
+    provider_data, reports = pull_and_validate(hyp, provider_for_source(hyp.source))
     save_quality_reports(record, reports)
 
     primary = hyp.symbols[0]
@@ -103,7 +105,7 @@ def backtest(slug: str, version: Optional[str] = typer.Option(None, help="Specif
         console.print(f"Scaffolded strategy: {record.strategy_path}")
 
     strategy = load_strategy_module(record.strategy_path)
-    result = run_backtest(strategy, provider_data[primary]["close"])
+    result = run_backtest(strategy, provider_data[primary]["close"], is_level=hyp.source == "derived")
     save_backtest_result(record, result)
 
     console.print(build_stats_table(result.stats, title=f"{hyp.title} — Backtest"))
@@ -126,6 +128,96 @@ def writeup(slug: str, version: Optional[str] = typer.Option(None, help="Specifi
     result = load_backtest_result(record)
     generate_writeup(record, hyp, reports, result)
     console.print(f"[success]Writeup written to {record.writeup_path}[/success]")
+
+
+def _resolve_composite_record(slug: str, version: Optional[str]):
+    from algoterminal.composite.storage import get_composite_record, latest_composite_record
+
+    record = get_composite_record(slug, version) if version else latest_composite_record(slug)
+    if record is None:
+        console.print(f"[error]No composite strategy found for nickname {slug!r}.[/error]")
+        raise typer.Exit(code=1)
+    return record
+
+
+@composite_app.command("create")
+def composite_create(
+    title: str,
+    legs: str = typer.Option(..., help="Comma-separated nicknames of existing saved strategies to combine"),
+    weighting: str = typer.Option("inverse_vol", help="'inverse_vol' (equalize risk contribution) or 'equal'"),
+    thesis: str = typer.Option("", help="Optional note on why these legs are combined"),
+) -> None:
+    """Create a new composite strategy from other saved strategies' nicknames."""
+    from algoterminal.composite.models import WEIGHTINGS, Composite
+    from algoterminal.composite.storage import create_composite
+
+    leg_list = [s.strip() for s in legs.split(",") if s.strip()]
+    if len(leg_list) < 2:
+        console.print("[error]Need at least 2 legs (comma-separated nicknames).[/error]")
+        raise typer.Exit(code=1)
+    if weighting not in WEIGHTINGS:
+        console.print(f"[error]weighting must be one of {WEIGHTINGS}.[/error]")
+        raise typer.Exit(code=1)
+
+    composite = Composite(title=title, legs=leg_list, thesis=thesis, weighting=weighting)
+    record = create_composite(composite)
+    console.print(f"[success]Saved composite {record.slug}/{record.version}[/success] ({', '.join(leg_list)})")
+
+
+@composite_app.command("backtest")
+def composite_backtest(
+    slug: str, version: Optional[str] = typer.Option(None, help="Specific record version; defaults to latest")
+) -> None:
+    """Combine each leg's own saved backtest into the composite's backtest."""
+    from algoterminal.composite.engine import CompositeError, run_composite_backtest, save_composite_backtest
+    from algoterminal.tui.widgets.stats_table import build_stats_table
+
+    record = _resolve_composite_record(slug, version)
+    composite = record.load_composite()
+
+    try:
+        result = run_composite_backtest(composite.legs, composite.weighting)
+    except CompositeError as exc:
+        console.print(f"[error]{exc}[/error]")
+        raise typer.Exit(code=1)
+
+    save_composite_backtest(record, result)
+    console.print(build_stats_table(result.stats, title=f"{composite.title} — Combined Backtest"))
+    for leg in result.legs:
+        console.print(f"  {leg.slug}/{leg.version}: weight {leg.weight:.1%}, Sharpe {leg.stats.sharpe:.2f}")
+
+
+@composite_app.command("writeup")
+def composite_writeup(
+    slug: str, version: Optional[str] = typer.Option(None, help="Specific record version; defaults to latest")
+) -> None:
+    """Generate the markdown writeup for a backtested composite."""
+    from algoterminal.composite.engine import has_composite_backtest, load_composite_backtest
+    from algoterminal.composite.writeup import generate_composite_writeup
+
+    record = _resolve_composite_record(slug, version)
+    if not has_composite_backtest(record):
+        console.print("[error]Run `algoterminal composite backtest` before generating a writeup.[/error]")
+        raise typer.Exit(code=1)
+
+    composite = record.load_composite()
+    result = load_composite_backtest(record)
+    generate_composite_writeup(record, composite, result)
+    console.print(f"[success]Writeup written to {record.writeup_path}[/success]")
+
+
+@composite_app.command("list")
+def composite_list() -> None:
+    """List saved composite strategies."""
+    from algoterminal.composite.storage import list_composite_slugs, list_composite_versions
+
+    for slug in list_composite_slugs():
+        versions = list_composite_versions(slug)
+        if not versions:
+            continue
+        latest = versions[-1]
+        composite = latest.load_composite()
+        console.print(f"[brand]{slug}[/brand] ({latest.version}): {', '.join(composite.legs)} [{composite.weighting}]")
 
 
 @universe_app.command("list")
