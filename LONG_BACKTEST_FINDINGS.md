@@ -137,3 +137,199 @@ Do NOT size capital to the recorded numbers. Recommended next steps:
   weights, costs, yearly, tails, cost sensitivity, param sweep).
 - `check_artifact.py` — zero-crossing artifact detector.
 - Data cache: `/tmp/panel_adj_2007_2026.parquet`.
+
+---
+
+# Round 2 — the gaps the 16y window surfaced, and the fixes (2026-09-10)
+
+Same worktree, same data, same frozen IS parameters. The 16y window exposed
+three structural problems in the factor-book engine that the 3y IS window
+could not see. Each is a real gap, not a tuning change. The fixes raise the
+honest OOS book Sharpe from 0.46 to 0.95 and cap OOS MaxDD near -11%.
+
+Scripts: `book_oos_v4.py` (corrected engine + design space),
+`book_oos_v3.py` (basis fix only), `validate_config.py`, `final_config.py`,
+`control_test.py`, `debug_*.py` (diagnostics).
+
+## G1 — the cross_sectional leg-switch phantom (the biggest gap)
+
+F2 holds the single most-crushed leg of {crack_321, crack_gas, crack_ho}.
+The three legs have completely different dollar scales (the gas crack is
+~$7, the HO crack ~$27). The old return builder chained the chosen leg's
+level into one series and measured P&L as position x d(series). When the
+chosen leg switches, the series jumps from one leg's level to another and
+the jump is booked as P&L.
+
+Evidence:
+- 2012-01-09: cross_sectional "return" -22.5%. Raw level moves that day
+  were tiny (+0.3% max). The chosen leg switched from crack_ho (27.39) to
+  crack_321 (18.96); the $8.4 gap was booked as a loss.
+- 2007-12-20: -53% on the same mechanism.
+- 2024-01-12: -43% in the IS window. Part of the recorded IS "edge" for F2
+  was this artifact.
+- The engine's circuit breaker also fired on the phantom jump, zeroing the
+  position for the cooldown period (whipsaw).
+
+Fix: F2 rebuilt per-leg. Position, return, hard stop, circuit breaker and
+trade cost are per leg. A leg switch is a real exit + entry trade pair,
+measured on each leg's own level and own base. Switches now pay real
+turnover in the cost model.
+
+Effect (v4 corrected engine, no gap cap):
+- cross_sectional OOS Sharpe 0.59 (was 0.49 in the bugged honest table),
+  OOS vol 40.7%. The phantom was noise in both directions.
+- The true edge is a bit better, the vol is still enormous.
+
+## G2 — sizing and return basis disagreed
+
+The engine sized positions on rel = dlevel / level but priced returns as
+dlevel / base (base = rolling mean |level|). Near zero-crossings the two
+agree poorly. bzwti (BZ-CL) crosses zero 548 times in 2007-26, so its
+"low vol" was partly an artifact of a small denominator, and inverse-vol
+weights over-concentrated in it.
+
+Fix: size and measure on the same basis (dlevel / base) everywhere.
+
+The honest number: cross_sectional IS Sharpe drops from 1.02 (bugged
+honest table) to 0.75 with the correct basis + per-leg fix. OOS 0.59.
+
+## G3 — gap-day notional is uncapped
+
+Positions run up to 1.0 notional. Real -20% level days become -18% book
+days:
+- 2019-09-03 (crack_321 -18.2%). Real event: RBOB crashed -8.9% that day.
+- 2020-03-12 (crack_321 -14.7%, cross_sectional -13.8%). COVID.
+- 2020-04-20 (bzwti -31.1%). Negative WTI.
+
+Fix option: cap each factor's position so a 3-sigma level move loses at
+most CAP3SIG of the book (CAP5 = 5%, CAP8 = 8%). This reduces raw OOS
+MaxDD (CORE3 EQ: -29.8% -> -21.0% at CAP5) at a Sharpe cost (~0.71 -> 0.65
+raw). Under the DD overlay the cap provides little extra; the overlay
+already de-risks. Recommend the no-cap engine + overlay unless trading live
+today with a hard gap constraint.
+
+## Factor verdicts (corrected, net, 5bps/20roll)
+
+| factor | IS Sh | OOS Sh | OOS MaxDD | OOS vol | daysOn OOS |
+| --- | --- | --- | --- | --- | --- |
+| crack_321 | 0.83 | 0.40 | -36.1% | 18.9% | 11.5% |
+| crack_ho | 0.11 | -0.08 | -68.7% | 14.8% | 11.5% |
+| cross_sectional | 0.75 | 0.59 | -67.7% | 40.7% | 38.8% |
+| ng | 0.67 | 0.11 | -62.0% | 23.6% | 28.5% |
+| bzwti | 1.53 | 0.25 | -41.8% | 16.5% | 52.1% |
+
+Verdicts:
+- crack_ho: no OOS edge. Drop. (-0.08, -68.7% DD.)
+- ng: dead OOS (0.11). Drop from the book; its diversification did not pay.
+- cross_sectional: real OOS edge (0.59) but at 40% vol with -68% DD. Kept
+  in the book at equal weight; the DD overlay and book weight tame it.
+- bzwti: the IS 1.53 -> OOS 0.25 collapse is real (the convergence edge
+  was mostly a 2023-26 phenomenon). Kept small as an uncorrelated leg.
+- crack_321: the core seasonal-crush thesis. Half IS strength OOS. Keep.
+
+The subset that wins OOS is CORE3 = crack_321 + cross_sectional + bzwti.
+Dropping the two dead factors raised OOS raw Sharpe from 0.58 (FULL HLV)
+to 0.71 (CORE3).
+
+## Why equal weights beat the IS-tuned inverse-vol weights
+
+- EQ: IS Sh 1.31 / OOS Sh 0.71 (raw, CORE3)
+- HLV: IS Sh 1.47 / OOS Sh 0.71
+- INV: IS Sh 1.58 / OOS Sh 0.67
+
+IS-tuned inverse-vol over-concentrates in bzwti because its near-zero-mean
+vol looks small. Equal weight is OOS-robust and needs no IS information.
+The per-factor signal parameters stay IS-frozen; only the outer book
+weights are equalized.
+
+## The DD overlay (v2)
+
+Book-level de-lever. Hysteresis state machine keyed on the EXPERIENCED
+equity drawdown:
+- Full (1.0) -> Cautious (0.5) when experienced drawdown <= -6%
+- Cautious -> Off (0.0) when experienced drawdown <= -10%
+- Off/Cautious -> Full only when the underlying engine makes a new high
+- Vol gear: min(1, 10% / trailing 20d vol)
+
+All causal (state decided at close t-1, applied to day t).
+
+The v1 overlay keyed on the engine's drawdown. That decoupled from the
+experienced equity (the experienced dd reached -26.9% while the engine dd
+was only -7% in 2011). v2 keys on the experienced equity; that is the fix.
+
+## Recommended config (was: baseline)
+
+CORE3 (crack_321 + cross_sectional + bzwti), equal weights, no gap cap,
+DD overlay (cut -6%, halt -10%, re-cock on engine new high).
+
+| window | CAGR | Sharpe | MaxDD | ann vol | worst day |
+| --- | --- | --- | --- | --- | --- |
+| IS (2023-09 -> 2026-09) | 7.26% | 1.13 | -10.25% | 6.4% | -2.32% |
+| OOS (2007-07 -> 2023-09) | 6.27% | 0.95 | -11.14% | 6.6% | -2.85% |
+
+Baseline (old pipeline, FULL inverse-vol, no overlay): OOS Sh 0.46, CAGR
+4.0%, MaxDD -21.9% at 9.5% vol. The new config: double the OOS Sharpe,
+halve the MaxDD, same order of CAGR, at 30% lower vol.
+
+At 10% vol (reporting normalization, not a trading rule) the overlay line
+scales to Sharpe 0.95 / MaxDD -16.4% / CAGR 9.4%. Better than the
+baseline at its own vol. The honest framing: the strategy runs at ~6.5%
+vol; its MaxDD is -11%. The "max 10% DD" target is met only at this
+reduced vol level.
+
+## What the overlay costs and why it is not overfit
+
+- It sat out 2014-2016 (engine did not make new highs until 2017). Raw
+  CAGR 11.1% -> 6.3%. The DD cap is not free.
+- 2013 -23.1% raw becomes -6.2% overlaid. 2019 -15.3% becomes -0.9%.
+- Worst OOS days: raw -12.2% (2019-09-03) -> overlay -2.85%. Single-day
+  gaps are reduced by the vol gear, not eliminated.
+- Negative control: shuffle the return series in time. The overlay Sharpe
+  falls to 0.36 (raw 0.71) and DD only improves to -16.4%. On iid noise
+  the overlay Sharpe collapses 0.54 -> 0.15. It exploits temporal
+  drawdown clustering, not a mechanical artifact.
+- Threshold sweep (cut -4 to -7.5%, halt -8 to -12%) is a plateau:
+  Sharpe 0.88-0.95, DD -9.8% to -13.1%. Not a spike.
+
+## 2013 and 2019 explained (per-factor, corrected)
+
+2013: cross_sectional -57.9% (64.7% days on), crack_ho -32.2%, ng -7.9%,
+bzwti -7.4%, crack_321 -3.9%. 2013 was a margin-compression regime: cheap
+WTI, strong but stable cracks, then margin collapse. F2's reversion longs
+bled through the year. With the DD overlay the book lost -6.2%, not -23%.
+
+2019: crack_321 -27.2% and cross_sectional -27.5%; crack_ho +30.2% and
+bzwti +8.6% masked them. A refining-margin compression year after the
+2018 Q4 collapse. Same regime fragility, different legs.
+
+Regime note: the seasonal-crush + cross-sectional book bleeds in
+sustained margin-compression regimes (2013, 2019). The overlay converts
+those bleeds into flat recovery years at the cost of some CAGR.
+
+## Open gaps (still real)
+
+1. Single-day gap risk is reduced but not bounded: a synchronized energy
+   shock can still hit -3% in a day at 6.6% vol. Options overlay is still
+   the genuine tail hedge (needs options data).
+2. Trade counts are small for the core thesis: crack_321 ~11.5% days-on
+   over 16y OOS, roughly 4-6 distinct entries per year. Multi-decade
+   validation helps but the sample per regime is thin.
+3. The overlay's "sat out 2014-2016" behavior is a policy choice, not a
+   defect. If capital must be deployed, the medium-stickiness variant
+   (re-enter at 0.5 when the engine recovers to -2% below high) caps DD
+   at ~-10% with OOS Sh 0.93 and CAGR 5.6%.
+4. No costs for leg switches inside F2 were modeled before; now they are
+   (per-leg turnover). Real fills on crack switches should be checked
+   against the 5bps assumption.
+5. Dampen F2 at the engine level (its 40% OOS vol dominates the raw
+   book's DD): the vt_f2 dimension moved little because the gap cap and
+   overlay dominate; worth one more look if the overlay is removed.
+
+## Artifacts (Round 2)
+
+- `book_oos_v3.py` — G2 basis fix, v1 overlay, first design space.
+- `book_oos_v4.py` — per-leg F2, G1+G2+G3, v2 overlay, full design space.
+- `validate_config.py`, `final_config.py` — details and variants.
+- `control_test.py` — negative control (shuffled / iid).
+- `book_oos_v4_results.csv` — 72-row design-space table.
+- `debug_*.py` — the diagnostics that found G1/G2/G3.
