@@ -827,3 +827,121 @@ regime instead of deleting the idea.
 - Killed constructions only: depth gates, weather on/off gates,
   product/natgas storage gates, book-level puts at modeled premiums,
   IS-trained risk-parity weights, fixed position caps.
+
+---
+
+# Round 8 — reversal-speed discriminator (2026-09-10)
+
+Pre-registered hypothesis (before measuring the engine): the windfall and
+the bleed share the same LEVEL (deeply crushed + crude stressed) but not
+the same PATH. A V-shaped crash — the held crush leg deepening fast
+(crash5 >= 1.0 z in 5 days) INTO deep territory (depth <= -1.25) —
+should precede the crisis-reversion payoff. A grind (deep but not
+deepening, crash5 ~ 0) should precede the bleed. Forcing FULL
+participation during the V-state should capture the windfall without
+paying the grind bleed that killed v3 and CLGATE.
+
+Engine: book_oos_v6.py. CORE3 EQ, NOCAP, 5bps/20roll, DD overlay v4
+(V-state forces FULL, overriding the v2 ladder). Causal: V at day t uses
+depth.shift(1) and crash5 = depth.shift(6) - depth.shift(1), known at
+close t-1. Thresholds pre-registered as round numbers (1.0 / -1.25,
+with -1.5 and 0.8/1.2 as the small grid).
+
+## Behavior: what the diagnostics showed before the engine
+
+- crash5 buckets (OOS held days): fast-deepening >= 1.0 has mean day
+  +0.135% vs grind -0.2..+0.2 at +0.030%. The deep+fast-deep interaction
+  is the informative cell: deep <= -1.5 and crash5 >= 1.0, mean +0.220%
+on 217 days, total +47.8%, 5.1% bigUp (>2%). Grind years 2013 and 2019
+  sit deep (median -1.63/-1.53) but with crash5 median 0.00/-0.11 — deep
+  but not deepening. So the LEVEL alone (v3) cannot discriminate; adding
+  SPEED does separate the states in-sample descriptively.
+- crude20 buckets: crude crash <= -15% has mean +0.160% with fat tails
+  both ways (5.0% bigUp, 5.4% bigDn) — crash alone is symmetric, not a
+  discriminator by itself.
+- the V-state as defined (crash5 >= 1.0 and depth <= -1.25): OOS held-day
+  mean +0.18% vs grind +0.038%, diff +0.14%, shuffle control p ~ 0.06
+  (borderline). In IS the same state loses: mean -0.31% vs grind +0.10%,
+  diff -0.42% (same construction, opposite sign). The V-state edge is
+  regime-dependent, not stationary.
+
+## Engine result: V4 does not beat V2
+
+| variant | IS Sh | OOS Sh | OOS CAGR | OOS MaxDD | OOS vol | OOS worst | top-5 capture |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| raw (no overlay) | 1.31 | 0.71 | 11.08% | -29.8% | 16.6% | -- | -- |
+| V2 champ | 1.13 | 0.95 | 6.27% | -11.1% | 6.6% | -2.85% | -- |
+| CLGATE | 1.21 | 0.90 | 8.62% | -18.6% | 9.6% | -5.68% | ~100% |
+| V4 1.0/-1.25 | -0.46 | 0.90 | 6.97% | -15.7% | 7.9% | -3.16% | 26% |
+| V4 1.0/-1.50 | -0.45 | 0.92 | 7.04% | -15.1% | 7.7% | -3.02% | 26% |
+| V4 0.8/-1.25 | -0.59 | 0.88 | 7.12% | -15.7% | 8.2% | -3.16% | 26% |
+| V4 1.2/-1.50 | -0.44 | 0.97 | 8.27% | -11.4% | 8.6% | -3.02% | 46% |
+
+Yearly OOS (V=1.0/-1.25): 2020 raw +32.8% -> V2 +4.2% -> V4 +16.4% -> CLGATE
++31.9% (V4 captures half the windfall). But V4 gives back in grind years:
+2019 V2 -0.9% -> V4 -5.1%, 2018 +0.1% -> -3.9%, 2015 0.0% -> -2.0%. The best
+OOS grid cell (1.2/-1.50, 0.97/-11.4%) still ties V2 within noise and
+carries the same IS collapse (-0.44 vs V2 1.13).
+
+Negative control: shuffling the V labels, re-running V4, gives OOS Sharpe
+mean 0.74 sd 0.12 (real V4 0.90, V2 0.95, raw 0.71). The V signal carries
+~1.3 sd of information; V2 carries ~1.7 sd. V2 dominates the shuffled
+baseline more strongly.
+
+## Mechanism: why deepening speed is not enough
+
+The fast-deepening signature IS the V-bottom entry (2020-04-20: crash5
++4.03, depth -1.94, crude -27.6% — the textbook V). But the same signature
+also fires in bleed years on days that do not pay: 2015 fast-deep days
+total -3.18% (35 days), 2016 -3.59% (26 days), 2017 -1.98% (33 days). In
+those years fast-deep events are noise — a brief deepening of an already
+deep grind that then keeps grinding. The level+speed pair does not know
+whether the deepening is the START of a V (reversal ahead) or a leg of
+a grind. The missing piece is the inflection: a V is deepening THEN
+shallowing. Crash5 alone sees only the first leg.
+
+## Retained signal: what is still usable
+
+- The state decomposition is real: deep + not-deepening = grind/bleed
+  (2013/2019 median crash5 ~0); deep + fast-deepening = crisis entry
+  (2020, also 2012 +10.95% and 2014 +9.19% in fast-deep days). The two
+  states have different forward distributions; the book is not one
+  population.
+- The tightest V cell (1.2/-1.5) is the only one that does not worsen DD
+  (-11.4% vs V2 -11.1%) and it captures 46% of the top-5 windfall. Its
+  threshold (rare, very fast deepening into very deep) is closest to
+  isolating the crisis V. That rarity is the clue: the discriminator must
+  be rarer and must include the reversal leg.
+
+## Scope: what failed, what is still standing
+
+Falsified construction: forcing FULL during deep+fast-deepening as a
+binary override to the v2 ladder. Falsified at the book-utility level
+(Sharpe/DD vs V2) and at the IS-robustness level (IS -0.44).
+
+Not falsified:
+1. Inflection (deepening then shallowing) as the discriminator — the
+   V-shape itself, not just the entry speed. Requires a 10-day shape:
+   deepening 10->5 days ago then shallowing 5->0 days ago.
+2. Crude crash velocity as a complement — crude20 <= -15% also had the
+   best mean day (+0.16%) bucket; a joint condition (fast-deep AND crude
+   crash) was not tested.
+3. V-state for sizing or re-cock only, not binary FULL. V2 staying flat
+   for years (2014-2016) is the cost; a partial re-risk (0.5) during a
+   probationary V window would keep more of the windfall with less bleed.
+4. Per-complex overlay (the second reopen candidate). Brent diversification
+   raw edge (+0.07) was eaten by book-level de-risking; a per-complex
+   DD overlay may let V-events in one complex survive while the other
+   stays de-risked.
+
+## Next question
+
+Does the inflection shape (fast deepening 10->5 days ago followed by fast
+shallowing in the last 5 days) separate the +21.1% day from the -5% grind
+days where V4 bled? That is the 10-day V hypothesis. It is testable on
+the same depth series without new data.
+
+Artifacts: diag_reversal.py (top/worst state table), diag_reversal2.py
+(bucket + fast-deep drill-down), diag_reversal3.py (V-state shuffle
+control), book_oos_v6.py + book_oos_v6_results.csv (V4 grid, yearly,
+worst days, shuffled control).
