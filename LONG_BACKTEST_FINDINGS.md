@@ -945,3 +945,134 @@ Artifacts: diag_reversal.py (top/worst state table), diag_reversal2.py
 (bucket + fast-deep drill-down), diag_reversal3.py (V-state shuffle
 control), book_oos_v6.py + book_oos_v6_results.csv (V4 grid, yearly,
 worst days, shuffled control).
+
+---
+
+# Round 9 — inflection V-shape falsified before engine, joint crisis filter emerges (2026-09-10)
+
+Pre-registered inflection hypothesis (before diagnostics): the V-bottom
+shape — fast deepening 10->5 days ago (prevDeep >= 1.0) then fast
+shallowing in the last 5 days (nowShallow <= -1.0) into a deep valley
+(held6 <= -1.25) — should mark the crisis reversal point. At the valley
+the forward payoff should be positive; forcing FULL at the inflection
+should capture the windfall without the grind bleed.
+
+## Behavior: diagnostics falsify the V-shape before any engine
+
+Inflection buckets (OOS held days, all thresholds):
+
+| prevDeep | nowShallow | held6 | n | meanV | mean grind | totalV |
+| --- | --- | --- | --- | --- | --- | --- |
+| >=1.0 | <= -1.0 | <= -1.25 | 73 | -0.159% | +0.051% | -11.61% |
+| >=1.0 | <= -1.0 | <= -1.50 | 70 | -0.116% | +0.049% | -8.09% |
+| >=0.8 | <= -0.8 | <= -1.25 | 107 | -0.112% | +0.052% | -12.00% |
+
+Every V-shape cell loses vs grind. Single sides: nowShallow <= -1.0 mean
+-0.019% vs +0.053% grind; prevDeep >= 1.0 mean -0.031% vs +0.056% grind.
+The shallowing leg loses — the V days include the worst OOS days
+(2016-02-16 -5.00%: prev +1.17 now -1.21; 2018-07-02 -4.74%: +1.54 / -1.12)
+and exclude the top days (2020-04-20: prev -4.63 now +4.03 — straight crash,
+not a V; 2010-03-01: -0.35 / -0.72 — not a V). Yearly: V-ret is negative
+in 7 of 9 years it fires (2020 V-ret -1.56% while total +33.58%). IS:
+n=4, mean -0.75% vs +0.066% grind. The V-shape is a bleed marker, not a
+windfall marker. The inflection hypothesis is falsified descriptively.
+No engine was built on it.
+
+## What the sweep surfaced instead — the joint crisis filter
+
+Scanning the same depth + crude20 space surfaced a joint that does
+separate:
+
+  JOINT = crash5 >= THR_CRASH and depth <= THR_DEPTH and crude20 <= THR_CRUDE
+
+Descriptive (OOS held days, causal at t-1):
+
+| c | cr | d | n | meanV | mean grind | totalV | IS n | IS meanV |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| 1.0 | -0.15 | -1.25 | 32 | +0.890% | +0.037% | +28.47% | 0 | -- |
+| 1.2 | -0.15 | -1.50 | 20 | +1.244% | +0.038% | +24.89% | 0 | -- |
+| 0.8 | -0.15 | -1.25 | 37 | +0.847% | +0.036% | +31.35% | 0 | -- |
+
+Fast-deepening alone (1.0/-1.25 without crude) was +0.181% vs +0.037%.
+Adding crude crash <= -15% lifts it to +0.89% — the crude crash filters
+out the grind fast-deeps that bleed (2015-2017) and keeps the crisis
+entries. 2020-04-20 is in this cell (+4.03 / -27.6% / -1.94). IS n=0 — the
+2023-26 window has no crude crash <= -15% into deep crush, so IS is
+untouched. This is a rare crisis state (0.8% of OOS days, 32 days in
+16y), not a steady edge.
+
+## Engine result: joint overlay vs V2
+
+Overlay: same v2 ladder, but JOINT forces FULL at day t (causal).
+Grid (CORE3 EQ, NOCAP, 5bps/20roll):
+
+| variant | IS Sh | IS DD | OOS Sh | OOS CAGR | OOS MaxDD | OOS vol | worst | top5 |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| raw | 1.31 | -20.2% | 0.71 | 11.08% | -29.8% | 16.6% | -- | -- |
+| V2 champ | 1.13 | -10.2% | 0.95 | 6.27% | -11.1% | 6.6% | -2.85% | -- |
+| joint 1.0/-0.15/-1.25 | 1.14 | -10.3% | 1.01 | 7.18% | -13.1% | 7.1% | -2.85% | 21.8% |
+| joint 1.2/-0.15/-1.50 | 1.14 | -10.3% | 1.01 | 7.11% | -13.6% | 7.1% | -2.85% | 21.8% |
+| joint 0.8/-0.15/-1.25 | 1.14 | -10.3% | 1.00 | 7.11% | -13.5% | 7.1% | -2.85% | 21.8% |
+| joint 1.0/-0.10/-1.25 | 1.13 | -10.4% | 0.97 | 7.23% | -13.1% | 7.5% | -2.85% | 26.2% |
+
+IS is intact (n=0, Sharpe 1.13->1.14). OOS: Sharpe 0.95->1.01 (+0.06),
+CAGR +0.91%, vol 6.6%->7.1%, DD -11.1%->-13.1% (-2.0% cost). Yearly: 2020
++4.2%->+18.3% (+14.1% of the windfall), others flat (2013 -6.2%->-6.2%,
+2019 -0.9%->-1.9%, 2014 0.0%->-1.3%). The grid is stable — all variants
+within 0.04 Sharpe — so threshold picking is not driving it.
+
+Negative control: shuffling the JOINT labels (30 draws) gives OOS Sharpe
+mean 0.87 sd 0.05 vs real joint 1.01, V2 0.95, raw 0.71. Real joint is
+2.8 sd above shuffled; V2 is 1.6 sd above. The JOINT signal carries
+information beyond base-rate rarity.
+
+## Mechanism: why crude filters the fast-deep
+
+Fast-deepening into deep (crash5+depth) sees two kinds of events:
+crisis entries (2020, also 2009 +7.46% and 2012 +10.95% in fast-deep days)
+and grind-noise deep events (2015-2017 bleed -1% to -3% in fast-deep days).
+Crude20 <= -15% selects the former — a crude market crash is the common
+cause of the payoff-relevant crushes. In 2015-2017 the crack crushed fast
+without crude crashing, and the entry bled. This is the same state overlap
+Round 4 found (level does not discriminate) but at the 5-day speed level:
+speed alone does not discriminate; speed + crude does, and only in the
+crisis tail.
+
+## Retained signal and what is falsified
+
+Falsified: (1) inflection V-shape as a FULL trigger (diagnostic -0.1% vs
++0.05%, worst-day composition, yearly negative). (2) joint as a free
+Sharpe lunch — it buys Sharpe/CAGR at a DD cost; it is not dominant on
+all metrics.
+
+Retained:
+1. JOINT as a rare crisis flag. Its descriptive +0.89% vs +0.037% is the
+   strongest single-state mean of the three rounds, and its IS safety
+   (n=0) is the only gate that did not collapse IS. It captures ~50% of
+   the V2-forgone 2020 windfall with minimal bleed otherwise.
+2. The failure mode of V4 (IS -0.44) is repaired — joint fires only in
+   crude crashes, so it does not bleed the 2023-26 bull tape.
+
+## Scope: what is still standing
+
+Not tested:
+1. JOINT for re-cock/sizing (0.5) rather than binary FULL — would keep
+   the 2020 capture with less DD slip (-13.1% vs -11.1%). The -2% DD cost
+   is the next thing to attack.
+2. JOINT with a tighter crude window (10d) or realized crude vol as the
+   crude leg — 20d pct_change is crude; a vol-adjusted crude stress
+   could be cleaner.
+3. Per-complex overlay (second reopen candidate) — Brent raw edge +0.07
+   still eaten by book-level DD. A per-complex ladder may let JOINT fire
+   in the crack complex while the Brent leg stays de-risked.
+
+## Next question
+
+Does a probationary FULL — JOINT forces FULL for N days then reverts to
+v2 unless still JOINT — keep the 2020 capture while capping the DD slip?
+That tests whether the -2% DD cost is duration of exposure or the JOINT
+days themselves.
+
+Artifacts: diag_inflection.py (V-shape buckets + yearly), diag_joint.py
+(joint descriptive + overlay quick test), book_oos_v7.py +
+book_oos_v7_results.csv (joint grid, yearly, worst days, shuffled control).
