@@ -59,6 +59,11 @@ redo), CONSTRAINED (data).
 | B1h = regime-gated crush + H1 de-risk | HOLD (OOS t 2.93 / FULL 3.33, neg 16%) | model_book.md |
 | Two-bet book diversification | NOT CONFIRMED in new architecture (B1h single sleeve wins) | model_book.md |
 | V2 overlay excluded from new construction | DESIGN (recurring constraint) | model_book.md |
+| ES-derived risk layer (10%/ES5 27.4% gear) | HOLD (DD -11.0%, t 2.93, neg 16%) | next_direction.md |
+| Cold severity at 5/10d horizons | FALSIFIED at those horizons | next_direction.md |
+| Gas-HO relative: seasonal conditional structure | DIRECTIONAL lead (clean test pending) | next_direction.md |
+| Utilization-surprise tilt on B1h | NULL | next_direction.md |
+| Forward protocol v2 (B1h) | WRITTEN | forward_protocol_v2.md |
 ## Rule
 
 Every future claim enters here with its evidence level, method, and
