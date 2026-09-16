@@ -6,7 +6,7 @@ ch4,cold-relative-signal: gas up / HO down after cold,evidence-confirmed,p1_cold
 ch5,brent-quality: quality -> refinery value -> WTI discount,constrained,no free quality series
 ch6,brent-logistics: Cushing fullness -> WTI discount,evidence-weak,phase3 H3 direction real but rare
 ch7,norm-drift: EV/efficiency/closures -> norm drift,evidence-confirmed,m7_drift
-ch8,regime-asymmetry: stretched reverts only in expansion,evidence-confirmed,p5_regime (4.7 sd)
+ch8,regime-asymmetry: stretched reverts only in expansion,direction-only after clean non-overlap validation; S sign flips validate
 ch9,stock-build tilt,tested-killed,hypothesis_pass P3 absent
 ch10,maintenance tilt,tested-killed,hypothesis_pass P4 absent; batch1 M1 absent
 ch11,electrical-load tilt,tested-killed,hypothesis_pass P6 absent
@@ -30,4 +30,4 @@ ch28,per-complex-overlay: Brent legs with per-complex de-risking,resurrect-candi
 ch29,cushing-ratio: stocks/capacity ratio,tested-killed,never tested
 ch30,multi-leg-f2: all crushed cross legs by depth,tested-kill-at-book, retained-leg-level V2 (0.735/-64.75%),open variant from batch1
 ch31,storage-component: B_t with interactions,model-candidate,model-first recheck
-ch32,regime-model: regime x margin states, transitions,evidenced,regime_state.md (comp long +21%, norm stretch -4.4%, sticky transitions)
+ch32,regime-model: regime x margin states, transitions,directional-only,hold_validation.md (L holds direction; S not held)
