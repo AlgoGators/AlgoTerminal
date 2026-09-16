@@ -72,6 +72,10 @@ redo), CONSTRAINED (data).
 | 5% bar and w/max normalization | ANCHORS (labels corrected) | component_audit.md |
 | Stops / CB / vol target / MAX_LEV | UNACCOUNTED v1 anchors (open work) | component_audit.md |
 | Deflated Sharpe for Bar5 stack | OPEN | component_audit.md |
+| Significance-derived bar (zcut -0.91) | DIRECTIONAL (held with old controls OOS t 2.14) | derived_controls.md |
+| Derived stop pack (nat 99%/2% defaults) | FALSIFIED vs old controls (OOS 1.87 vs 2.14); policy anchors matter | derived_controls.md |
+| Unified scale (budget/ES5) | HOLD-equivalent (0.468) | derived_controls.md |
+| Lookback 90 window | plateau confirmed (OOS 2.48/FULL 2.28 NEW) | derived_controls.md |
 ## Rule
 
 Every future claim enters here with its evidence level, method, and
