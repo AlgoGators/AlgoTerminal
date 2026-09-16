@@ -17,6 +17,7 @@ costs) or the named 10% risk anchor. None was tuned on the future.
 from __future__ import annotations
 
 import importlib.util
+import os
 from pathlib import Path
 
 import numpy as np
@@ -35,6 +36,47 @@ ZLO, ZHI = -4.0, 1.5
 MIN_BIN = 20
 T_SIG = 1.5
 MIN_FIT = 100
+
+
+def z_lag_loo(lvl, lookback=90, clip=8.0, min_obs=30):
+    """Seasonal z with LEAVE-CURRENT-YEAR-OUT same-month norm.
+
+    The norm for date t uses ONLY same-month observations from PRIOR
+    years, so the value being normalized can never contribute to its
+    own norm. Falls back causally (ffill) when prior-year history is
+    short. Recent 90-day stage is trailing-only (causal).
+    """
+    prev = lvl.shift(1)
+    vals = prev.to_numpy(dtype=float)
+    years = prev.index.year.to_numpy()
+    months = prev.index.month.to_numpy()
+    mean = pd.Series(np.nan, index=prev.index, dtype=float)
+    std = pd.Series(np.nan, index=prev.index, dtype=float)
+    for m in range(1, 13):
+        msel = months == m
+        if not msel.any():
+            continue
+        yrs_m = np.unique(years[msel])
+        for y in yrs_m:
+            prior = np.flatnonzero(msel & (years < y))
+            if len(prior) >= min_obs:
+                sel = np.flatnonzero(msel & (years == y))
+                mean.iloc[sel] = vals[prior].mean()
+                std.iloc[sel] = vals[prior].std(ddof=1)
+    mean = mean.ffill()
+    std = std.ffill()
+    mean = mean.replace([np.inf, -np.inf], np.nan)
+    std = std.replace([np.inf, -np.inf], np.nan)
+    if os.environ.get("Z_LOO_DRIFT") == "1":
+        resid = prev - mean
+        drift = resid.expanding(min_periods=252).mean()
+        mean = mean + drift.replace([np.inf, -np.inf], np.nan)
+    adj = prev - mean
+    a_mean = adj.rolling(lookback, min_periods=45).mean()
+    a_std = adj.rolling(lookback, min_periods=45).std()
+    valid = a_std.fillna(0.0) > (1e-4 * a_mean.abs()).fillna(0.0)
+    z = (adj - a_mean) / a_std.where(valid)
+    return z.replace([np.inf, -np.inf], np.nan).clip(-clip, clip)
 
 spec = importlib.util.spec_from_file_location("dc", str(ROOT / "scripts" / "derived_controls_harness.py"))
 dc = importlib.util.module_from_spec(spec)
@@ -88,7 +130,10 @@ def main() -> None:
     levels = dc.fb.build_levels(df)
     full_idx = df.index
     lvl = levels["crack_321"]
-    z = dc.z_factory(lvl, 90, 8.0)
+    if os.environ.get("Z_LOO") == "1" or os.environ.get("Z_LOO_DRIFT") == "1":
+        z = z_lag_loo(lvl, 90, 8.0)
+    else:
+        z = dc.z_factory(lvl, 90, 8.0)
     zv = z.to_numpy(dtype=float)
     base = dc.b4.base_of(lvl).shift(1).replace(0.0, np.nan)
     fwd20 = (lvl.shift(-20) - lvl) / base
@@ -233,6 +278,10 @@ def main() -> None:
         for y, d in diary:
             f.write(f"{y} " + " ".join(f"{k}={d[k]}" for k in d) + "\n")
     print("\nSaved results/walkforward_causal_series.csv + diary")
+    if os.environ.get("Z_LOO") == "1":
+        pd.DataFrame({"date": ret_full.index, "ret": ret_full.to_numpy(),
+                      "pos": pos_full.to_numpy()}).to_csv(
+            ROOT / "results" / "walkforward_causal_loo_series.csv", index=False)
 
 
 all_ret: list = []
