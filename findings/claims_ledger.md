@@ -45,6 +45,11 @@ redo), CONSTRAINED (data).
 | Utilization trend +0.25 pts/yr | CONFIRMED-STAT | decade slope | direction3.md |
 | Seasonal amplitude trend rising | CONFIRMED-STAT (era-driven caveat) | decade slope | direction3.md |
 | Crush state mixture: mean +11.7%, P(>10%)=49%, ES5 -27% | HOLD-shape | mixture model | direction3.md |
+| RBOB COT net z vs 20d crack | FALSIFIED/weak (within noise) | direction4.md |
+| Crude COT series | CONSTRAINED (no NYMEX in public datasets) | direction4.md |
+| International cracks (Rotterdam/Singapore) | CONSTRAINED (EIA intl route 400) | direction4.md |
+| Per-complex overlay + Brent legs | FALSIFIED (0.425-0.552 vs 0.862) | direction4.md |
+| Named-event pattern (crisis troughs precede +20d) | IDEA (descriptive, small n) | direction4.md |
 ## Rule
 
 Every future claim enters here with its evidence level, method, and
