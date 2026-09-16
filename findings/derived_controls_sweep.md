@@ -1,52 +1,66 @@
-# Derived-controls sweep — INVALID (reproducibility failure)
+# Derived-controls sweep — corrected results
 
-Date: this session. Harness: `sweep_controls_harness.py`,
-`sweep2_harness.py`. Prereg: `research/derived_controls_sweep.md`
-(02e08ba).
+Date: this session. Harness: `sweep3_harness.py` (single-builder).
+Prereg: `research/derived_controls_sweep.md` (02e08ba).
+Supersedes the invalid sweep records (acdd00d). The reproducibility
+bar held: anchor reproduced exactly (TRAIN t = +1.11).
 
-## What happened
+## The bug that was fixed
 
-The sweep could not reproduce its own anchor configuration. The
-verified base harness produced TRAIN t = +1.11 for
-(t=2.0, cb=.99, budget=.02, trail=.75, cool=3). The sweep harness,
-with nominally identical settings, produced TRAIN t = +0.00 (flat
-book). When a parameter sweep cannot reproduce the base result for
-the same configuration, every ranking it produces is untrustworthy.
+The circuit-breaker sign was double-negated in the grid builder
+(cb became negative, so `-cb_thresh` was positive and every held day
+fired the stop, flattening the book). One-line fix: cb = positive
+level percentile, same as the verified harness.
 
-## Result
+## TRAIN-selected config (selection on TRAIN only)
 
-- 243-config grid and the earlier 2000-config grid are recorded as
-  INVALID. Do not use their rankings.
-- The partial CSV files are kept only as evidence of the failure.
-- No selection, no marginals, no findings were taken from them.
+t-entry 1.5 (zcut -0.45), CB quantile 0.99-0.999, per-trade budget
+7.5%, trail 85th MAE percentile, cooldown 3.
 
-## Likely causes (candidates, not confirmed)
+| Window | t | CI excludes 0 at 90%? |
+| --- | ---: | --- |
+| TRAIN | +3.64 | yes |
+| VALIDATE | +1.61 | borderline (touches 0) |
+| OOS | +3.96 | yes |
+| FULL | +3.66 | yes |
 
-- The grid builder recomputes the curve, w, CB base, and MAE with
-  small differences from the verified harness (h1 shift timing,
-  relnorm median normalization, entry list construction).
-- The derived_risk custom loop is stateful and sensitive to the
-  exact input series; a difference that leaves the book flat on
-  TRAIN for the anchor indicates a real discrepancy, not a ranking
-  artifact.
+## Deep comparison: old controls vs swept-derived
 
-## The reproducibility bar (rule added)
+| Item | Old (picked) | Swept-derived choice | Why it wins (marginals) |
+| --- | --- | --- | --- |
+| Entry bar | t>=2 equivalent / 5% | **t>=1.5, zcut -0.45** | entry-t marginal: 1.5 (+2.86) vs 2.0/2.5 (+1.79). Trading shallower crushes captures more reversion days with better aggregate t |
+| CB quantile | 3 sigma | 99-99.9th (any) | CB marginal flat (+2.15 across): the derived CB (11-14% level) rarely fires at any tested quantile; the CB is effectively inactive at this scale |
+| Per-trade budget | 20% | **7.5%** (distance ~16%) | budget marginal: 7.5% (+2.51) > 5% (+2.47) > 2% (+1.46). The old 20% was directionally right; the earlier 2% default was wrong (too tight) |
+| Trailing percentile | 1.25 sigma | **85th MAE** | trail marginal: 85th (+2.28) > 75th (+2.26) > 65th (+1.90). Looser trail preserves winners |
+| Cooldown | 5 days | **0-3 days** | cool marginal: 0 (+2.50) > 3 (+2.22) > 5 (+1.72). Long cooldowns destroy whipsaw-recovery |
 
-Any parameter sweep must FIRST reproduce the base harness result for
-its anchor configuration. If the anchor t differs materially, the
-sweep is invalid and must be fixed before any ranking is reported.
-This failure is now part of the ledger as a methodological rule.
+Result versus the old-controls construction:
+- OOS t 3.96 vs 2.14; FULL t 3.66 vs 2.31 (clean blocks).
+- The largest lever was the entry bar (trade shallower, more days);
+  the stops' old values were directionally sane as loose disaster
+  caps, and the sweep confirms loose stops (7.5-16% distance, loose
+  trail) beat tight ones.
 
-## Next step (correct order)
+## Honest caveats
 
-1. Extract the position/risk builder from the verified harness into
-   one shared function used by BOTH the base run and the sweep.
-2. Reproduce the anchor (TRAIN t ~ 1.11).
-3. Re-run the grid only after the anchor reproduces.
-4. Rank on TRAIN, confirm on VALIDATE/OOS/FULL, report marginals.
+- VALIDATE remains borderline (t 1.61, 90% CI touching zero) — the
+  same persistent out-of-window weakness.
+- Selection is TRAIN-based by the prereg rule; the top-10 plateau is
+  tight (TRAIN 3.45-3.64), so the choice is not a spike.
+- CB being inactive means the derived CB is not meaningfully
+  binding; an explicit daily-loss-budget policy (e.g., book loss
+  cap) is the cleaner design than a level-percentile CB.
+- Costs still assumed 5/20; standard lookup pending.
+
+## Ledger
+
+- Sweep bug (CB sign) found and fixed; reproducibility bar validated.
+- Swept-derived controls: HOLD on OOS/FULL (t 3.96/3.66), VALIDATE
+  borderline. Chosen config: entry t=1.5, budget 7.5%, trail 85th,
+  cool 0-3, CB inactive.
+- Old control values replaced by data-chosen values; marginals give
+  the mechanism.
 
 ## Artifacts
 
-- `sweep_controls_harness.py`, `sweep2_harness.py`
-- `results/sweep_grid.csv`, `results/sweep2_grid.csv` (invalid,
-  kept as evidence)
+- `sweep3_harness.py`, `results/sweep3_grid.csv`, `results/sweep3_top10.csv`
