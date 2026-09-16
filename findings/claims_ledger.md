@@ -50,6 +50,10 @@ redo), CONSTRAINED (data).
 | International cracks (Rotterdam/Singapore) | CONSTRAINED (EIA intl route 400) | direction4.md |
 | Per-complex overlay + Brent legs | FALSIFIED (0.425-0.552 vs 0.862) | direction4.md |
 | Named-event pattern (crisis troughs precede +20d) | IDEA (descriptive, small n) | direction4.md |
+| Regime gate on crack (raw book) | DIRECTIONAL-clean (raw t 2.94/3.43); rejected at overlay | final_strategy.md |
+| H1 in book under regime gate | NULL (redundant) | final_strategy.md |
+| Final integration V2 | REJECTED; failed level = overlay interaction | final_strategy.md |
+| Champion remains deployable benchmark | HOLD | final_strategy.md |
 ## Rule
 
 Every future claim enters here with its evidence level, method, and
