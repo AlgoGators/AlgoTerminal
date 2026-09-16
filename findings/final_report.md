@@ -27,19 +27,31 @@ coming.
 That is the whole idea. Everything else in this document is about
 making that single idea precise, honest, and measurable.
 
-The clean results, in one table (all windows, net of cost):
+The measured result is reported with each window's real role made
+explicit. One earlier label is removed entirely: the "OOS" (2007-2023)
+window was not out-of-sample for this construction, because it
+contains 11.5 of the 11.5 years of the training window. It is gone
+from this report.
 
-| | Derivation | Out-of-window | Full history |
-| --- | ---: | ---: | ---: |
-| Years | 11.5 | 7.7 | 19.1 |
-| Return per year | +14.1% | +6.5% | +11.7% |
-| Sharpe | 0.87 | 0.72 | 0.84 |
-| Max drawdown | -20.9% | -21.2% | -21.2% |
+| | Training window | Out-of-window | Walk-forward | Full history |
+| --- | ---: | ---: | ---: | ---: |
+| Range | 2007-2018 | 2019-2026 | 2012-2026 | 2007-2026 |
+| Role | Estimation AND selection | Single holdout | Re-estimated on past data, year by year | Total, contains training |
+| Years | 11.5 | 7.7 | 14.7 | 19.1 |
+| Return per year | +14.1% | +6.5% | +11.3% | +11.7% |
+| Sharpe | 0.87 | 0.72 | 0.86 | 0.84 |
+| Max drawdown | -20.9% | -21.2% | -16.2% | -21.2% |
 
-The honest summary: the strategy earns real money in the market
-states where the edge is known to exist, and it earns about half as
-much in the one window that was never touched during research. That
-second number is the gap the forward test exists to close.
+The honest summary: the training-window numbers are in-sample and
+therefore optimistic, because several values were chosen to perform
+well in exactly that window. The proper evaluation is the walk-
+forward: every year from 2012 to 2026 was traded with the curve,
+scale, and stop distributions re-estimated only on data from before
+that year, and the four fixed controls were never re-tuned per year.
+That walk-forward earned +11.3% per year, Sharpe 0.86, max drawdown
+-16.2%, across 14.7 genuinely out-of-sample years. Full history is
+context and contains training data. The walk-forward is the number to
+quote; the forward protocol remains the live gate.
 
 ---
 
@@ -371,32 +383,53 @@ sources are still on the to-do list.
 
 ---
 
-## Part 6. Where Every Number Came From
+## Part 6. Where Every Number Came From (honest classification)
 
-This section exists because the project had a hard rule: no number
-gets into the strategy unless it came from the data or is an
-explicitly named economic choice. Every choice is listed.
+Every number in the strategy is listed below with its TRUE origin.
+Four categories exist, and the difference between them matters:
 
-| Number | Value | Source | Type |
+- MEASUREMENT: read directly from an empirical distribution.
+- CONVENTION: a standard statistical choice or a plateau-verified
+  window, not derived from the shape.
+- SELECTION: chosen because it performed best on the TRAINING
+  window. This is in-sample tuning, disclosed as such. These values
+  inflate the training-window results.
+- ANCHOR / ASSUMPTION: explicitly named economic choice or
+  assumption.
+
+The earlier version of this table labeled almost everything
+"derived". That was wrong, and it is corrected here.
+
+| Number | Value | True origin | Honest label |
 | --- | --- | --- | --- |
-| Regime window | 504 days, median + 1.4826 x MAD | robust central tendency of the data | derived |
-| Seasonal z | calendar mean + 90-day recent stage | structural construction; robustness plateau verified | derived/structure |
-| Entry line | z <= -0.45 | the largest z whose TRAIN curve bin had t-stat >= 1.5 | derived |
-| Exposure curve | E[fwd20\|z, regime]/max | TRAIN conditional-mean curve | derived |
-| Storage gate | stocks z >= +1 | one same-month standard deviation | derived |
-| Scale | 0.468 | 10% budget / 21.4% TRAIN ES5 | derived |
-| Per-trade budget | 7.5% | TRAIN sweep marginal (7.5% beat 5% beat 2%) | derived |
-| Trailing percentile | 85th | TRAIN sweep marginal | derived |
-| Cooldown | 3 sessions | TRAIN sweep marginal | derived |
-| CB threshold | ~99th pct level move | TRAIN percentile (inactive at scale) | derived |
-| Loss budget | 10% over 20 days | economic risk appetite | named anchor |
-| Costs | 5/20 bps | industry standard assumption | assumption |
+| Regime window | 504 days, median + 1.4826 x MAD | Median/MAD are robust statistics; the 504-day window and the 1.4826 constant are conventions | CONVENTION |
+| Seasonal z | calendar mean + 90-day recent stage | Two-stage structure is a design choice; the 90-day lookback is a plateau-verified convention | CONVENTION (with plateau verification) |
+| Entry line | z <= -0.45 | Follows from the bin t>=1.5 threshold, which was SELECTED on the training window by comparing alternatives | SELECTION |
+| Exposure curve | E[fwd20\|z, regime]/max | Measured conditional mean on the training window | MEASUREMENT (on training data) |
+| Storage gate | stocks z >= +1 | One same-month standard deviation; the +1 cutoff was chosen | CONVENTION/SELECTION |
+| Scale | 0.468 | 10% budget / 21.4% TRAIN ES5; the ES5 is measured, the 10% is an anchor | MEASUREMENT + ANCHOR |
+| Per-trade budget | 7.5% | Chosen because 7.5% scored best on the TRAINING window | SELECTION |
+| Trailing percentile | 85th | Chosen because 85th scored best on the TRAINING window | SELECTION |
+| Cooldown | 3 sessions | Chosen by sweep on the TRAINING window | SELECTION |
+| CB threshold | ~99th pct level move | Quantile chosen; the resulting threshold is inactive at this scale | CONVENTION/SELECTION |
+| Loss budget | 10% over 20 days | economic risk appetite | ANCHOR |
+| Costs | 5/20 bps | industry standard | ASSUMPTION |
+
+Consequence, stated plainly: the per-trade budget, trailing
+percentile, cooldown, and the entry-line threshold were selected to
+maximize results on 2007-2018. The training-window statistics are
+therefore inflated by their own selection. Do not present them as
+expected performance. The only honest estimate of live behavior is
+the out-of-window number, and even that number has not cleared the
+statistical bar.
 
 Sweep discipline: the harness that chose the sweep values had to
 first reproduce the base result (TRAIN t = 1.11). If it could not,
 its rankings were discarded. We hit exactly that failure once; the
 bug (a sign error on the circuit breaker) was found, fixed, and the
-sweep re-run from the anchor.
+sweep re-run from the anchor. Reproducing the base does not make
+selection on the training window a derivation; it only makes the
+procedure trustworthy.
 
 ---
 
@@ -428,28 +461,33 @@ matched.
 ### The full table
 
 All values are net of costs, on non-overlapping 20-day blocks.
+Columns: Training (where values were estimated AND selected),
+Out-of-window (the only true out-of-sample evidence), Full (total,
+contains training). The old "OOS" column is removed: it was not
+out-of-sample for this construction.
 
-| Metric | Derivation (11.5y) | Out-of-window (7.7y) | OOS* (16.1y) | Full (19.1y) |
+| Metric | Training (11.5y) | Out-of-window (7.7y) | Walk-forward (14.7y) | Full (19.1y, contains training) |
 | --- | ---: | ---: | ---: | ---: |
-| Annualized return | +14.11% | +6.48% | +14.10% | +11.65% |
-| CAGR (geometric) | +13.70% | +6.26% | +13.98% | +11.31% |
-| Sharpe | 0.870 | 0.719 | 0.971 | 0.839 |
-| Deflated Sharpe (1000 trials) | 0.551 | 0.110 | 0.907 | 0.824 |
-| Sortino | 0.806 | 0.502 | 0.863 | 0.719 |
-| Annualized volatility | 16.22% | 9.01% | 14.52% | 13.90% |
-| Max drawdown | -20.93% | -21.24% | -20.93% | -21.24% |
-| Best day | +18.23% | +8.82% | +18.23% | +18.23% |
-| Worst day | -6.28% | -8.72% | -6.28% | -8.72% |
-| Trades | 127 | 68 | 169 | 200 |
-| Win rate | 50.4% | 45.6% | 48.5% | 48.0% |
-| Average win | +3.38% | +2.78% | +3.58% | +3.29% |
-| Average loss | -0.85% | -0.77% | -0.71% | -0.80% |
-| Profit factor | 4.05 | 3.01 | 4.75 | 3.82 |
-| Exposure (share of days) | 23.5% | 16.5% | 20.7% | 20.8% |
+| Annualized return | +14.11% | +6.48% | +11.34% | +11.65% |
+| CAGR (geometric) | +13.70% | +6.26% | +11.07% | +11.31% |
+| Sharpe | 0.870 | 0.719 | 0.859 | 0.839 |
+| Deflated Sharpe (1000 trials) | 0.551 | 0.110 | 0.713 | 0.824 |
+| Sortino | 0.806 | 0.502 | 0.753 | 0.719 |
+| Annualized volatility | 16.22% | 9.01% | 13.20% | 13.90% |
+| Max drawdown | -20.93% | -21.24% | -16.16% | -21.24% |
+| Best day | +18.23% | +8.82% | +17.75% | +18.23% |
+| Worst day | -6.28% | -8.72% | -8.19% | -8.72% |
+| Trades | 127 | 68 | 173 | 200 |
+| Win rate | 50.4% | 45.6% | 43.9% | 48.0% |
+| Average win | +3.38% | +2.78% | +3.13% | +3.29% |
+| Average loss | -0.85% | -0.77% | -0.73% | -0.80% |
+| Profit factor | 4.05 | 3.01 | 3.34 | 3.82 |
+| Exposure (share of days) | 23.5% | 16.5% | 20.9% | 20.8% |
 
-\* "OOS" is the historical convention: 2007-2023. It overlaps the
-derivation window by 11.5 years, so treat the Out-of-window column
-as the real out-of-sample evidence.
+Read the walk-forward column: it is the only long-run column where
+no evaluated year was included in the data that produced its own
+decisions. Training is in-sample by construction; the single holdout
+is short; full contains training.
 
 ### How to read each metric (plain words)
 
@@ -488,24 +526,29 @@ small corrections.
 
 The headline t-stats on non-overlapping 20-day blocks:
 
-| Window | t-stat |
-| --- | ---: |
-| Derivation | +3.64 |
-| Out-of-window | +1.61 |
-| Full | +3.66 |
+| Window | t-stat | What it contains |
+| --- | ---: | --- |
+| Training (selection) | +3.64 | the data used to build and select the strategy |
+| Out-of-window | +1.61 | the only untouched data |
+| Walk-forward | +3.40 | each year evaluated only on prior data |
+| Full (contains training) | +3.66 | total history |
 
-The derivation and full-history numbers are far beyond conventional
-significance. The out-of-window number is the weak one and it is
-flagged, not hidden.
+The walk-forward t-stat (+3.40) is the number to quote: it is large
+and it comes from genuinely out-of-sample years.
 
 ---
 
 ## Part 9. The Honest Caveats
 
-1. The out-of-window window earned half the return (6.5% vs 14.1%)
-   and its deflated Sharpe is 0.11: luck cannot be excluded there.
-   This is the single most important limitation and the reason the
-   forward test is the gate to investment.
+1. The walk-forward is the honest estimate (Sharpe 0.86 over 14.7
+   out-of-sample years, DSR 0.71 at 1000 trials), but it is not a
+   guarantee. 2013, 2024, and 2025 were negative years, including
+   two in a row (2024-2025). The single holdout window (2019-2026)
+   is weaker still (Sharpe 0.72, DSR 0.11). The training numbers
+   are inflated by selection: four values (entry threshold, per-
+   trade budget, trailing percentile, cooldown) were chosen to
+   perform best on that window. The forward protocol remains the
+   gate for capital.
 2. The drawdown is real. There is no drawdown overlay in this
    strategy; -21% was the actual experienced risk, and the daily
    worst was -8.7%. Risk is managed by the loss budgets and the
@@ -513,10 +556,10 @@ flagged, not hidden.
 3. Costs are assumed at 5/20 bps. Standard published sources
    (exchange fees, commissions, roll carry) are still to be wired
    in.
-4. The entire program lives on one panel. Even the derivation
-   numbers carry residual selection effects from the broader
-   research path. The out-of-window column is the only truly
-   untouched measure.
+4. The entire program lives on one panel. The out-of-window window
+   (2019-2026) is the only truly untouched measure; every other
+   number in this document was used, directly or indirectly, in
+   building or selecting the strategy.
 5. Heavy tails: a few days dominate the profit (2020-2022 crash
    windows). The distribution is not gentle.
 
@@ -527,8 +570,10 @@ flagged, not hidden.
 The old champion (CORE3 equal-weight plus a drawdown overlay) had an
 OOS Sharpe of about 0.86. The current strategy reaches a similar
 Sharpe (0.87 derivation, 0.84 full) with:
-- no tuned parameters (0.75/-0.5 entry thresholds from the v1 era
-  are gone, replaced by the derived curve and the -0.45 line);
+- the 0.75/-0.5 entry thresholds from the v1 era are gone; the
+  new entry line (z <= -0.45) is a training-selected value (from the
+  bin t >= 1.5 rule), and the curve itself is re-measured on prior
+  data — selection is disclosed, not called derivation);
 - no path-dependent drawdown overlay (risk is distribution-derived);
 - a cleaner statistical record (fixed DSR computation, non-overlap
   blocks throughout).
