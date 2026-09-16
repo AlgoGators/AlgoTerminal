@@ -145,3 +145,9 @@ ch22,chain-crude-quality-detailed,chain,Quality mix -> refinery value, complex r
 ch23,chain-weather-regime,chain,Cold, hurricanes, freeze events
 ch24,chain-demand-structure,chain,Subgrades, octane, ethanol, travel shifts
 ch25,chain-model-components,chain,Phase 4 model: norm + D + S + B + R, regime gate
+ch26,chain-short-rebuild,chain,Expansion-regime short 10-20d hold (P5)
+ch27,chain-ngl-propane-winter,chain,Propane/NGL state conditions gas and NG winter
+ch28,chain-per-complex-overlay,chain,Brent legs with per-complex de-risking
+ch29,chain-cushing-ratio,chain,Cushing stocks/capacity utilization ratio
+ch30,chain-multi-leg-f2,chain,Hold all crushed cross legs by depth
+ch31,chain-storage-component,chain,Storage as model component B_t with interactions

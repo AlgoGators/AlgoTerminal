@@ -182,3 +182,10 @@ bleed,r_t,conditions,ch25,proposed,,,
 norm,norm_t,drives,ch25,confirmed,confirmed,m7_drift,Drift-corrected norm
 r_t,reversion,influences,ch25,proposed,,,Residual carries reversion
 regime-state,reversion,gates,ch25,proposed,,,Model gate
+p5_regime,ch26,evidence_for,ch26,confirmed,confirmed,,,
+winter-blend,propane,influences,ch27,inferred,,,Winter butane pull draws NGL
+propane,ng,influences,ch27,inferred,,,NGL complex shares storage with gas
+ch28,brent-quality,references,ch28,weak,,,Raw F5/F6 edge known
+cush-cap,cushing,influences,ch29,untested,,,Ratio never tested
+crush,gas-crack,influences,ch30,inferred,,,Multi-leg variant holds all crushed
+store-build,b_t,part_of,ch31,proposed,,,Component with interactions
