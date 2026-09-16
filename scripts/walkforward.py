@@ -79,7 +79,8 @@ def main() -> None:
     prod_z = dc.daily_state(dc.sm_z((gas + dist).diff()), full_idx)
     h1_m = (1 - (prod_z >= 1.0).shift(1).fillna(0.0)).shift(1).fillna(1.0)
     rv = lvl.diff().abs().rolling(20, min_periods=10).mean().shift(1).replace(0.0, np.nan)
-    relnorm = (1.0 / rv).fillna(1.0) / (1.0 / rv).fillna(1.0).median()
+    inv = (1.0 / rv).fillna(1.0)
+    relnorm = (inv / inv.expanding(min_periods=252).median().fillna(inv.median())).fillna(1.0)
 
     all_ret = []
     all_pos = []
