@@ -67,6 +67,11 @@ redo), CONSTRAINED (data).
 | 0.75/-0.5 thresholds | REMOVED; replaced by TRAIN curve shape + 5% bar (zcut ~ -0.68) | derived_thresholds.md |
 | Bar5 curve exposure | HOLD OOS/FULL (t 2.53/2.82); borderline VALIDATE | derived_thresholds.md |
 | Fully unbarred curve | FALSIFIED out-of-window (VALIDATE t 0.97) | derived_thresholds.md |
+| Gear lookahead | FIXED (ES5 TRAIN -21.9% -> gear 0.457; old gear conservative) | component_audit.md |
+| Rebuilt median norm | FALSIFIED in curve construction (VALIDATE -5.2%, OOS ~0) | component_audit.md |
+| 5% bar and w/max normalization | ANCHORS (labels corrected) | component_audit.md |
+| Stops / CB / vol target / MAX_LEV | UNACCOUNTED v1 anchors (open work) | component_audit.md |
+| Deflated Sharpe for Bar5 stack | OPEN | component_audit.md |
 ## Rule
 
 Every future claim enters here with its evidence level, method, and
