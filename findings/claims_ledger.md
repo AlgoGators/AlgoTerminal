@@ -64,6 +64,9 @@ redo), CONSTRAINED (data).
 | Gas-HO relative: seasonal conditional structure | DIRECTIONAL lead (clean test pending) | next_direction.md |
 | Utilization-surprise tilt on B1h | NULL | next_direction.md |
 | Forward protocol v2 (B1h) | WRITTEN | forward_protocol_v2.md |
+| 0.75/-0.5 thresholds | REMOVED; replaced by TRAIN curve shape + 5% bar (zcut ~ -0.68) | derived_thresholds.md |
+| Bar5 curve exposure | HOLD OOS/FULL (t 2.53/2.82); borderline VALIDATE | derived_thresholds.md |
+| Fully unbarred curve | FALSIFIED out-of-window (VALIDATE t 0.97) | derived_thresholds.md |
 ## Rule
 
 Every future claim enters here with its evidence level, method, and
