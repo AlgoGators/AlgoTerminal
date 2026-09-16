@@ -43,6 +43,157 @@ second number is the gap the forward test exists to close.
 
 ---
 
+## Part 1A. The Edges, Deeply: Why Margins Revert
+
+This section is the economics under the strategy. Read it as the
+answer to one question: why should a refinery margin ever come back
+to normal?
+
+### The core premise, in the captain's own words
+
+"They don't stay crushed, don't stay stretched. The same movements
+that make them shift also make them correct back."
+
+That sentence is the entire thesis. A refining margin is not a
+random walk. It is the price of a service — converting crude into
+usable fuel — and the market that provides that service is
+self-correcting. Every force that moves the margin away from normal
+whatever it is that caused a crush or a stretch, eventually generates
+the opposing force that brings it back. The margin is a pendulum
+with friction: it swings, but it does not swing away forever.
+
+There is one honest qualification, and it shapes the whole strategy:
+the two directions do not correct at the same speed or the same
+reliability. Crushed margins come back for reasons that are slow but
+almost inevitable. Stretched margins can stay stretched for a long
+time because the forces that would end tightness are slower and less
+reliable. That asymmetry is exactly why this strategy is long-only,
+and why it refuses to trade stretched margins except to leave them
+alone.
+
+### Force 1: sticky capacity
+
+The hardest fact in this market is that you cannot build a refinery
+quickly. A new plant takes years and billions of dollars. Shutting
+one down, or idling it, takes months. So capacity responds to price
+on two completely different clocks:
+
+- When margins are crushed: the weakest refineries stop, idle, or
+  close. That removes product supply. Less supply, same sticky
+  demand, and the margin is pushed back up. The exit is forced by
+  the price signal itself — owners respond to the crush by leaving.
+  This is "the same movement that shifts the margin corrects it":
+  the low margin is what forces the capacity out.
+- When margins are stretched: high margins attract utilization and
+  imports, but brand-new supply takes years. So a stretch can
+  survive on tightness. This is why the right tail is not reliably
+  tradeable.
+
+Think of a parking lot with a slow-moving gate. The lot is rarely
+empty because cars (capdev) leave and enter slowly; the number of
+lot-spaces (refinery capacity) adjusts only grudgingly. A crush is
+the lot being over-supplied; the correction is spaces exiting.
+
+### Force 2: seasons shift things
+
+Demand is on a calendar that you can print: gasoline peaks in the
+summer driving season, distillate (heating oil and diesel) peaks in
+winter. The refinery must be ready for the peak before it arrives,
+so the productive side of the calendar also has rhythm: runs rise
+in the spring ahead of summer, tanks are built up (injection), and
+maintenance is scheduled in shoulder seasons to prepare for the
+peaks.
+
+The strategy removes the calendar to find the deviation: what
+matters is not "is the margin cheap?" but "is the margin cheap for
+this time of year?" The seasonal z-score subtracts the same-month
+norm and standardizes, so a January margin is compared to January,
+not to July.
+
+The deep point: the calendar itself is known to everyone, so the
+calendar itself is priced and not an edge. The edge lives in the
+deviations around the calendar — a cold snap that raises demand
+more than usual, a flow unwind that overshoots, a maintenance
+timing slip. The seasonal normalization exists exactly to isolate
+those deviations, and the regime gate exists because the calendar
+deviation behaves differently in different regimes.
+
+### Force 3: storage and logistics
+
+Inventories are the buffer of the whole system. When tanks are
+full, the market has nowhere to put extra product, so the margin
+is pressed. When tanks are low, the market must bid for product,
+so the margin is supported. Storage is the pendulum's shock
+absorber: it does not cause the swing, but it decides how hard the
+swing is and how fast it reverses.
+
+Two subtle physics follow:
+
+- Tank bottoms: usable storage is not the same as reported
+  storage. A “low” inventory number near operational minimums is
+  much tighter than the same number far above the plumbing floor.
+- Location: crude lives in specific places. Cushing, Oklahoma is
+  the delivery point for WTI, and when Cushing fills, WTI must
+discount to avoid more inflows — the “tank-tops” effect that
+  pushed the Brent-WTI spread around for years. Pipelines and
+  product shipping connect the islands; when a pipe is full or a
+  batch is in transition, regional prices can disconnect from the
+  national benchmark.
+
+The strategy tests this force directly: when product inventories
+are building strongly (the buffer is pressing), it goes flat. That
+is the storage gate — the empirical test of the buffer mechanism,
+and one of the few fundamental variables that survived every
+falsification attempt.
+
+### The mechanism, in one picture
+
+```
+Crushed margin
+    -> weakest capacity exits        (months; forced by price)
+    -> product supply tightens
+    -> margin recovers               (the left-tail correction)
+
+Stretched margin
+    -> tightness persists            (capacity is sticky upward)
+    -> new supply arrives slowly     (years)
+    -> stretch can last              (the right tail is not reliable)
+
+Same-movement correction: the dislocation itself produces the
+response that ends it.
+```
+
+The strategy trades only the first row, in the regimes where it is
+measured to work, and it steps out when the buffer presses.
+
+### Why this maps to the strategy, force by force
+
+| Economic force | Strategy component | Why |
+| --- | --- | --- |
+| Capacity exit on crush | Long crush in compression/normal | The forced exit IS the reversion; compression is where it is active |
+| Capacity sticky upward | No short side; skip expansion | Tightness can persist; the stretch is not reliably tradeable |
+| Calendar rhythm | Seasonal z (calendar + recent deviation) | Deviations around the calendar are the flow edge, not the calendar |
+| Storage buffer | H1 de-risk when stocks build | The buffer pressing is the physical damper working against the trade |
+| Place/location flows | Curve exposure | Temporary flow excursions relative to recent path revert first |
+
+### What the data added beyond the theory
+
+Theory says margins revert; the data says when. The clean measured
+facts:
+
+- A crushed margin in compression recovers strongly (+21% over 20
+days in the two-regime table).
+- A crushed margin in expansion does not (~0 to -3%). The same
+  level, different state, opposite trade. The regime gate was not a
+  nicety; it was the difference between the edge and noise.
+- Strengthening product inventories remove the reversion edge —
+  the storage gate de-risks exactly those moments.
+- Known calendars (maintenance dates, blend switches) carried no
+  edge once tested cleanly; the deviations around them do. This is
+  the priced-vs-surprise division that keeps the strategy honest.
+
+---
+
 ## Part 2. The Market, Explained
 
 ### Oil futures
