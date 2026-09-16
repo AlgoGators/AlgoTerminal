@@ -1,0 +1,17 @@
+# v2 immutable inputs (Phase 0 freeze)
+
+engine/panel_v2.parquet
+  sha256: e667d0ef71f4367b321b43eeaa007834ddecfc4a51611cc1cfeef13ec8a61a2b
+  source: /home/sebas/algoterminal-strategy-audit/panel_v2.parquet
+  rows:   4829 (2007-07-02 .. 2026-09-09)
+  note:   byte-identical copy; never replaced in place
+
+engine/engine_v2x.py
+  source: /home/sebas/algoterminal-strategy-audit/book_oos_v4.py (working tree)
+  note:   byte-identical copy of the corrected v4 engine
+
+engine/factor_book.py
+  source: /home/sebas/algoterminal-strategy-audit/factor_book.py (working tree)
+  note:   byte-identical copy of the frozen factor engine
+
+Any change to an input requires a new manifest entry. Never edit in place.

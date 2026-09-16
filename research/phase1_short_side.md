@@ -1,0 +1,38 @@
+# Phase 1 — Side structure (preregistered)
+
+Status: preregistered. No numbers measured yet.
+
+## Question
+
+Is the v1 long-only book a regime artifact or a structural law?
+
+v1 concluded "short side is dead" from an in-sample test with no OOS
+confirmation. The OOS engine never shorted a crack leg.
+
+## Hypotheses
+
+H1. Fading stretched cracks (z > +0.75 / +1.0) has period-dependent
+edge. It pays in margin-compression regimes and bleeds in tightness
+regimes.
+
+H2. A stretch-momentum leg (ride stretched margins while they persist)
+captures the right tail that reversion fades.
+
+H3. A split book (left reversion + right momentum) beats the long-only
+book on OOS Sharpe and drawdown.
+
+## Experiments
+
+1. Short-side fade on corrected engine, OOS window, costs 5bps/20roll.
+2. Stretch-momentum leg, same engine and costs.
+3. Book variants: v1 long-only, balanced reversion, split book.
+4. Regime drill: 2011-2014 (compression) vs 2023-26 (expansion).
+
+## Negative controls
+
+- Shuffled signal labels.
+- Same construction on shuffled returns.
+
+## Deliverable
+
+Decision memo: v2 side structure. Written to `findings/phase1_findings.md`.
