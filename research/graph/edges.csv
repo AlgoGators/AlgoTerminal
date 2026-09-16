@@ -6,41 +6,179 @@ winter-blend,butane,influences,ch1,inferred,,,Butane usable in volume in winter
 butane,propane,influences,ch1,inferred,,wpr_propane,Butane spills/pulls affect NGL balance
 propane,blend-cost,influences,ch1,inferred,,,NGL prices feed blend economics
 blend-cost,gas-crack,influences,ch1,confirmed,untested,panel,Blend economics inside RB crack
+season,rvp,part_of,ch1,confirmed,confirmed,panel,Regulatory calendar
+octane,blend-cost,influences,ch1,inferred,,,Premium octane cost
+ethanol,blend-cost,influences,ch1,inferred,,,E10/E15 in blend
+ethanol,octane,influences,ch1,inferred,,,Octane source
+gas-subgrade,octane,influences,ch1,inferred,,,Premium share drives octane
+wpr_propane,propane,measured_by,ch1,,untested,,Propane gauge fetched
 season,spring-event,part_of,ch2,confirmed,confirmed,panel,Spring deadline dates
 spring-event,maintenance,includes,ch2,inferred,,wpuleus3,Maintenance prep for summer
+maintenance,turnaround,part_of,ch2,inferred,,,Maintenance is turnaround work
 spring-event,injection,includes,ch2,inferred,,,Summer-grade tank farm pre-build
+injection,prod-stocks,influences,ch2,inferred,,,Tank build shows in stocks
 spring-event,gas-crack,influences,ch2,confirmed,confirmed,p2_blend,Suppressed reversion + vol jump
 p2_blend,ch2,evidence_for,ch2,confirmed,confirmed,,,
 cold,fuel-consumption,influences,ch3,confirmed,confirmed,t2m_nyc,Cold start/warmup/drag/tire
+cold,cold-start,influences,ch3,inferred,,,Choke enrichment
+cold,warmup,influences,ch3,inferred,,,Longer warmup fuel
+cold,air-drag,influences,ch3,inferred,,,Denser air
+cold,tire-pressure,influences,ch3,inferred,,,Pressure loss
+cold,cabin-heat,influences,ch3,inferred,,,Cabin heating load
+cold-start,fuel-consumption,influences,ch3,inferred,,,
+warmup,fuel-consumption,influences,ch3,inferred,,,
+air-drag,fuel-consumption,influences,ch3,inferred,,,
+tire-pressure,fuel-consumption,influences,ch3,inferred,,,
+cabin-heat,fuel-consumption,influences,ch3,inferred,,,
 fuel-consumption,gas-demand,influences,ch3,inferred,,,Per-mile use up
 gas-demand,gas-crack,influences,ch3,confirmed,confirmed,p1_cold,Winter monotone severity
+ev-share,fuel-consumption,gates,ch3,inferred,,,EV fleet dilutes effect over time
+t2m_nyc,cold,measured_by,ch3,confirmed,confirmed,,NASA POWER daily
 p1_cold,ch3,evidence_for,ch3,confirmed,confirmed,,,
 cold,heating-demand,influences,ch4,inferred,,,HO and propane heating
 heating-demand,ho-crack,influences,ch4,confirmed,confirmed,p1_cold,HO forward negative after cold
+propane-heat,heating-demand,part_of,ch4,inferred,,,Rural heating and crop drying
+panel,ho-crack,measured_by,ch4,confirmed,confirmed,,,
 p1_cold,ch4,evidence_for,ch4,confirmed,confirmed,,,
 wti-quality,refinery-value,influences,ch5,inferred,,constrained,Quality premium concept
 brent-quality,refinery-value,influences,ch5,inferred,,constrained,Differential vs WTI
 refinery-value,gas-crack,influences,ch5,weak,,constrained,Not directly measurable
+unit-coker,refinery-value,gates,ch5,inferred,,,Complex refineries run heavy crude
+panel,brent-quality,measured_by,ch5,constrained,constrained,,BZ CL in panel
 cushing,gas-crack,influences,ch6,weak,partially-tested,wpuleus3,H3 direction real but rare
 export-regime,cushing,influences,ch6,weak,,constrained,Post-2016 globalized WTI
+us-export,cushing,influences,ch6,weak,,,Export capacity drains Cushing
+export-dock,us-export,part_of,ch6,inferred,,,Loading constraints
+cush-cap,cushing,indicates,ch6,inferred,,,Fullness = utilization ratio
+ch6,cushing,evidence_for,ch6,weak,partially-tested,,,
 ev-share,norm,drives,ch7,confirmed,confirmed,m7_drift,Drift source
 efficiency,norm,drives,ch7,inferred,,,Drift source
 closures,norm,drives,ch7,inferred,,,Drift source
+rd-conversion,norm,drives,ch7,inferred,,,RD/SAF replaces gasoline capacity
+cap-exit,closures,part_of,ch7,inferred,,,Closures are exits
 m7_drift,ch7,evidence_for,ch7,confirmed,confirmed,,,
 stretched,reversion,influences,ch8,confirmed,confirmed,p5_regime,Reverts only in expansion
 expansion,reversion,gates,ch8,confirmed,confirmed,p5_regime,Gate
 compression,reversion,gates,ch8,confirmed,confirmed,p5_regime,Persists up in compression
+regime-state,expansion,part_of,ch8,proposed,,,Model gate
+regime-state,compression,part_of,ch8,proposed,,,Model gate
+reversal-speed,reversion,gates,ch8,weak,,,Rounds 8-9 speed separates events
+windfall,reversion,conditions,ch8,weak,,,Deep crush + crude stress pays
+bleed,reversion,conditions,ch8,weak,,,Same level slow grind bleeds
+inflection,reversion,gates,ch8,absent,,,V-shape falsified
 p5_regime,ch8,evidence_for,ch8,confirmed,confirmed,,,
 store-build,crush,influences,ch9,killed,tested-killed,,Tier1 absent monotone
 ch9,crush,evidence_for,ch9,absent,tested-killed,,,
 maintenance,season,occurs_in,ch10,absent,tested-killed,wpuleus3,Tier1 absent
 ch10,maintenance,evidence_for,ch10,absent,tested-killed,,,
-cold,season,occurs_in,ch3,confirmed,confirmed,,Winter window
-season,stretched,conditions,ch8,confirmed,confirmed,,,
-season,crush,conditions,ch3,confirmed,confirmed,,,
-wpr_propane,propane,measured_by,ch1,,untested,,Propane gauge fetched
-wpuleus3,maintenance,measured_by,ch10,,tested-killed,,Utilization weekly
-t2m_nyc,cold,measured_by,ch3,confirmed,confirmed,,NASA POWER daily
-panel,gas-crack,measured_by,ch1,confirmed,confirmed,,RB HO CL in panel
-panel,ho-crack,measured_by,ch4,confirmed,confirmed,,,
-panel,brent-quality,measured_by,ch5,constrained,constrained,,BZ CL in panel
+season,driving-season,part_of,ch12,confirmed,confirmed,panel,Summer gasoline peak
+season,holidays,part_of,ch12,confirmed,confirmed,panel,July 4; Thanksgiving; Christmas
+season,distillate-winter-peak,part_of,ch12,confirmed,confirmed,panel,Winter distillate peak
+season,shoulder,part_of,ch12,confirmed,confirmed,panel,Spring and fall transition
+driving-season,gas-demand,influences,ch12,confirmed,confirmed,panel,Peak season demand
+holidays,gas-demand,influences,ch12,weak,,panel,Spike events
+distillate-winter-peak,heating-demand,influences,ch12,weak,,panel,Winter distillate demand
+shoulder,gas-crack,influences,ch12,weak,,p2_blend,Blend transition shoulder
+wpuleus3,util-pin,measured_by,ch13,confirmed,confirmed,,Utilization weekly
+util-pin,gas-crack,influences,ch13,weak,evidence-partial,wpuleus3,Phase3 T1 direction real
+turnaround,gas-crack,influences,ch13,weak,,,Scheduled maintenance events
+outage,gas-crack,influences,ch13,weak,,,Unplanned trips
+hurricane,outage,causes,ch13,inferred,,,Gulf storms
+freeze,outage,causes,ch13,inferred,,,2021 Texas freeze
+freeze,gas-demand,influences,ch13,weak,,,Cold demand spike
+ref-complex,refinery-value,gates,ch13,inferred,,,Complexity determines capture
+unit-fcc,ref-complex,part_of,ch13,inferred,,,
+unit-reformer,ref-complex,part_of,ch13,inferred,,,
+unit-alky,ref-complex,part_of,ch13,inferred,,,
+unit-coker,ref-complex,part_of,ch13,inferred,,,
+unit-hydro,ref-complex,part_of,ch13,inferred,,,
+cap-exit,util-pin,influences,ch13,inferred,,,Fewer refineries at pin
+cap-exit,gas-crack,influences,ch14,weak,,,Closures tighten margins
+cap-entry,gas-crack,influences,ch14,inferred,,,New builds slow
+rd-conversion,cap-exit,part_of,ch14,inferred,,,Conversion is exit from gasoline
+me-newbuilds,cap-entry,part_of,ch14,inferred,,,Export capacity from ME
+closures,cap-exit,part_of,ch14,inferred,,,
+macro-cycle,cap-entry,gates,ch14,inferred,,,Investment cycle
+opec,crude-mix,influences,ch15,inferred,,,Supply policy
+shale,crude-mix,influences,ch15,inferred,,,More light sweet
+us-export,crude-mix,part_of,ch15,inferred,,,WTI global
+crude-imports,crude-mix,influences,ch15,inferred,,,Heavy imports Gulf
+crude-mix,refinery-value,influences,ch15,inferred,,,Quality shifts value
+neg-wti,crude-mix,conditions,ch15,weak,,,Extreme event
+product-trade,gas-demand,influences,ch16,inferred,,,Trade balances supply
+usec-imports,product-trade,part_of,ch16,inferred,,,USEC gasoline imports
+diesel-exports,product-trade,part_of,ch16,inferred,,,US diesel exports
+freight,product-trade,gates,ch16,inferred,,,Cargo rates
+product-trade,gas-crack,influences,ch16,inferred,,,Import parity
+injection,prod-stocks,influences,ch17,confirmed,confirmed,p2_blend,Spring injection
+winter-fill,prod-stocks,influences,ch17,inferred,,,Autumn pre-winter builds
+prod-stocks,store-build,measured_by,ch17,confirmed,confirmed,,EIA weekly
+prod-stocks,gas-crack,influences,ch17,absent,tested-killed,,P3 no monotone relation
+cush-cap,cushing,influences,ch17,weak,,,Fullness signal
+tank-bottom,store-build,gates,ch17,inferred,,,Operational minimum
+spr,store-build,gates,ch17,inferred,,,Policy releases
+colonial,gas-crack,influences,ch18,inferred,,,Artery to East Coast
+batch,colonial,part_of,ch18,inferred,,,Spec batches monthly
+batch,regional-gap,influences,ch18,inferred,,,Spec transition dislocations
+regional-gap,gas-crack,influences,ch18,inferred,,,Regional price moves
+pipe-cap,colonial,gates,ch18,inferred,,,Full pipeline bottlenecks
+pipeline-ops,colonial,operates,ch21,inferred,,,
+cot,reversal-speed,influences,ch19,inferred,,,Positioning pressure
+oi,reversal-speed,influences,ch19,inferred,,,Activity
+fut-curve,carry,influences,ch19,inferred,,,Contango/backwardation
+carry,gas-crack,influences,ch19,inferred,,,Roll yield
+index-flow,fut-curve,influences,ch19,inferred,,,ETF rolls
+index-flow,oi,influences,ch19,inferred,,,Roll volumes
+cal-spread,fut-curve,measured_by,ch19,inferred,,,Seasonal spread trading
+crack-options,carry,influences,ch19,inferred,,,Vol market
+imo2020,heating-demand,influences,ch20,weak,,,Diesel demand shift
+covid,gas-demand,influences,ch20,confirmed,,,Documented demand collapse
+covid,norm,drives,ch20,weak,,,Travel shift and recovery
+sanctions,crude-mix,influences,ch20,confirmed,,,Disruption
+red-sea,freight,influences,ch20,confirmed,,,Route diversions
+neg-wti,crush,conditions,ch20,confirmed,,,2020-04-20
+imo2020,unit-hydro,influences,ch20,inferred,,,Desulfurization demand
+macro-cycle,gas-demand,gates,ch20,weak,,,GDP-linked
+refiners,gas-crack,influences,ch21,inferred,,,Runs and pricing
+blenders,gas-crack,influences,ch21,inferred,,,Blend economics response
+traders,fut-curve,influences,ch21,inferred,,,Price discovery
+hedgers,fut-curve,influences,ch21,inferred,,,Hedging flows
+etf-users,index-flow,part_of,ch21,inferred,,,Retail flows
+crack-options,traders,measured_by,ch21,inferred,,,Vol and positioning
+wti-quality,crude-mix,part_of,ch22,inferred,,,
+brent-quality,crude-mix,part_of,ch22,inferred,,,
+crude-mix,refinery-value,influences,ch22,inferred,,,Quality premium
+unit-coker,refinery-value,gates,ch22,inferred,,,Heavy processing ability
+ref-complex,refinery-value,gates,ch22,inferred,,,
+hurricane,gas-crack,influences,ch23,weak,,,Regional supply shock
+freeze,gas-crack,influences,ch23,weak,,,Demand and outage mix
+cold,gas-demand,influences,ch23,weak,,,Generalizes cold demand
+p1_cold,ch23,evidence_for,ch23,confirmed,confirmed,,,
+gas-subgrade,gas-demand,influences,ch24,inferred,,,Premium share
+ethanol,gas-demand,influences,ch24,inferred,,,Blend wall and octane
+wfh,gas-demand,influences,ch24,inferred,,,Travel pattern
+octane,gas-crack,influences,ch24,inferred,,,Premium economics
+jet,ho-crack,influences,ch24,weak,,,Jet/diesel same pool
+season,d_t,part_of,ch25,proposed,,,Model demand component
+cold,d_t,part_of,ch25,proposed,,,Model demand component
+driving-season,d_t,part_of,ch25,proposed,,,
+distillate-winter-peak,d_t,part_of,ch25,proposed,,,
+gas-demand,d_t,part_of,ch25,proposed,,,
+util-pin,s_t,part_of,ch25,proposed,,,Model supply component
+turnaround,s_t,part_of,ch25,proposed,,,
+cap-exit,s_t,part_of,ch25,proposed,,,
+opec,s_t,part_of,ch25,proposed,,,
+shale,s_t,part_of,ch25,proposed,,,
+prod-stocks,b_t,part_of,ch25,proposed,,,Model storage component
+cush-cap,b_t,part_of,ch25,proposed,,,
+spr,b_t,part_of,ch25,proposed,,,
+tank-bottom,b_t,part_of,ch25,proposed,,,
+reversal-speed,r_t,part_of,ch25,proposed,,,Model residual component
+cot,r_t,part_of,ch25,proposed,,,
+oi,r_t,part_of,ch25,proposed,,,
+carry,r_t,part_of,ch25,proposed,,,
+windfall,r_t,conditions,ch25,proposed,,,
+bleed,r_t,conditions,ch25,proposed,,,
+norm,norm_t,drives,ch25,confirmed,confirmed,m7_drift,Drift-corrected norm
+r_t,reversion,influences,ch25,proposed,,,Residual carries reversion
+regime-state,reversion,gates,ch25,proposed,,,Model gate

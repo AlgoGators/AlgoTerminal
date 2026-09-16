@@ -49,3 +49,99 @@ ch8,chain-regime-asymmetry,chain,Stretched reverts in expansion only
 ch9,chain-stock-build,chain,Product builds scale crush reversion (killed Tier1)
 ch10,chain-maintenance,chain,Winter maintenance tightens supply (killed Tier1)
 ch11,chain-electrical-load,chain,Degree days -> run rates (killed Tier1)
+driving-season,driving-season,concept,Summer gasoline demand peak (Memorial Day to Labor Day)
+holidays,holiday-demand-spikes,concept,July 4 peak; Thanksgiving; Christmas travel
+shoulder,shoulder-months,concept,Spring and fall transitional demand
+distillate-winter-peak,distillate-winter-peak,concept,Heating season peak for diesel/kerosene
+jet,jet-fuel-demand,concept,Aviation kerosene; travel-linked
+kerosene,kerosene,concept,Heating kerosene (winter, rural)
+naphtha,naphtha-petchem,concept,Petchem feedstock + gasoline blendstock
+propane-heat,propane-heating,concept,Rural heating + autumn crop drying
+resid,residual-fuel,concept,Bunker and industrial fuel
+asphalt,asphalt-season,concept,Summer paving season
+gas-subgrade,gasoline-subgrades,concept,Regular/premium mix shifts octane demand
+ethanol,ethanol-blendstock,concept,E10/E15; octane source; blend wall
+octane,octane-value,concept,High-octane premium economics
+wfh,work-from-home,concept,Travel pattern shift post-COVID
+cold-start,cold-start-enrichment,concept,Choke/enrichment at cold engine start
+warmup,engine-warmup,concept,Idle/warmup fuel consumption
+air-drag,cold-air-drag,concept,Denser air raises highway load
+tire-pressure,cold-tire-pressure,concept,Pressure loss raises rolling resistance
+cabin-heat,cabin-heating-load,concept,Engine supplies cabin heat in cold
+ref-complex,refinery-complexity,concept,Simple vs complex unit configuration
+unit-fcc,fcc-unit,concept,Converts gasoil to gasoline
+unit-reformer,reformer-unit,concept,High-octane reformate
+unit-alky,alkylation-unit,concept,Alkylate gasoline blendstock
+unit-coker,coker-unit,concept,Resid conversion; heavy-crude processing
+unit-hydro,hydrotreater-unit,concept,Desulfurization; IMO2020 link
+turnaround,turnaround-window,concept,Scheduled spring/fall maintenance
+outage,unscheduled-outage,concept,Unplanned unit trips
+hurricane,gulf-hurricane,concept,Refinery/offshore outages in storms
+freeze,tx-freeze-event,concept,2021 Texas freeze demand/outage shock
+util-pin,utilization-pin,concept,Runs at capacity; supply response exhausted
+cap-exit,capacity-exit,concept,Refinery closures when margins fail
+cap-entry,capacity-entry,concept,New builds slow (years)
+rd-conversion,renewable-diesel-conversion,concept,RD/SAF capacity replaces gasoline-making refineries
+me-newbuilds,middle-east-newbuilds,concept,New export refining capacity
+opec,opec-plus-decisions,concept,Crude supply policy
+shale,us-shale,concept,US crude production growth
+crude-mix,crude-quality-mix,concept,Rising light sweet share vs heavy
+us-export,us-export-capacity,concept,WTI global post-2016; drains Cushing
+crude-imports,us-crude-imports,concept,Heavy crude imports on Gulf Coast
+product-trade,product-trade-flows,concept,US gasoline/diesel import-export balance
+usec-imports,east-coast-imports,concept,USEC gasoline imports from Europe
+diesel-exports,us-diesel-exports,concept,Large US diesel export flow
+freight,product-freight,concept,Cargo rates affect import parity
+winter-fill,winter-fill-cycle,concept,Distillate builds autumn pre-winter
+prod-stocks,product-stocks-eia,data,EIA weekly WGTSTUS1/WDISTUS1
+cush-cap,cushing-capacity,concept,Tank utilization ratio (fullness)
+spr,spr-releases,concept,Strategic reserve policy
+tank-bottom,tank-bottom-mins,concept,Operational minimum stocks
+colonial,pipeline-colonial,concept,East Coast gasoline supply artery
+batch,batch-schedule,concept,Spec batches; monthly cycle
+regional-gap,regional-price-gap,concept,Spec/batch dislocations between regions
+pipe-cap,pipeline-capacity,concept,Bottleneck when full
+export-dock,export-loading,concept,Cargo loading constraints
+cot,cot-positioning,data,CFTC managed money weekly
+oi,open-interest,data,Futures open interest
+fut-curve,futures-curve,concept,Contango/backwardation state
+carry,roll-carry,concept,Roll yield of long/short positions
+index-flow,index-roll-flows,data,USO/ETN rolls move front month
+crack-options,crack-option-vol,data,Implied vol of crack options
+cal-spread,calendar-spread,concept,Seasonal spread trading
+reversal-speed,reversal-speed,concept,Deepening vs grinding path (rounds 8-9)
+inflection,inflection-shape,concept,V-bottom second leg
+windfall,crisis-windfall-state,concept,Deep crush + crude stress pays
+bleed,grind-bleed-state,concept,Same level, slow grind bleeds
+imo2020,imo2020,concept,Marine sulfur rule shifted demand to diesel (2020)
+covid,covid-demand-shock,concept,2020 demand collapse and recovery
+neg-wti,negative-wti-event,concept,2020-04-20 futures below zero
+sanctions,sanctions-2022,concept,Russia supply disruption
+red-sea,red-sea-disruptions,concept,2024 shipping route diversions
+macro-cycle,economic-cycle,concept,GDP-linked product demand
+refiners,refiners,concept,Set margins via runs and pricing
+blenders,blenders,concept,React to blend economics
+pipeline-ops,pipeline-operators,concept,Control batch flow
+traders,futures-traders,concept,Price discovery and flows
+hedgers,hedgers,concept,Refiners and producers hedge
+etf-users,etf-participants,concept,USO-style retail flows
+norm_t,norm-component,concept,m_t norm (drift-corrected)
+d_t,demand-component,concept,m_t demand state
+s_t,supply-component,concept,m_t supply state
+b_t,storage-component,concept,m_t storage buffer
+r_t,residual-component,concept,m_t flow residual
+regime-state,regime-gate,concept,Expansion/compression/crisis gate
+ch12,chain-seasonal-demand-cycle,chain,Calendar demand peaks: summer gasoline, winter distillate, shoulder
+ch13,chain-refinery-operations,chain,Utilization, turnarounds, complexity, outages
+ch14,chain-capacity-structure,chain,Sticky entry/exit; closures; conversions; new builds
+ch15,chain-crude-supply-and-flows,chain,OPEC+, shale, exports, quality mix
+ch16,chain-product-trade,chain,Import/export arbitrage
+ch17,chain-storage-cycle,chain,Injection, winter fill, tank bottoms
+ch18,chain-pipeline-logistics,chain,Colonial batches and regional dislocations
+ch19,chain-flow-positioning,chain,COT, open interest, curve and carry
+ch20,chain-structural-events,chain,IMO2020, COVID, sanctions, EV, efficiency
+ch21,chain-market-structure,chain,Refiners, blenders, pipelines, traders, hedgers
+ch22,chain-crude-quality-detailed,chain,Quality mix -> refinery value, complex refineries
+ch23,chain-weather-regime,chain,Cold, hurricanes, freeze events
+ch24,chain-demand-structure,chain,Subgrades, octane, ethanol, travel shifts
+ch25,chain-model-components,chain,Phase 4 model: norm + D + S + B + R, regime gate

@@ -10,3 +10,17 @@ ch8,regime-asymmetry: stretched reverts only in expansion,evidence-confirmed,p5_
 ch9,stock-build tilt,tested-killed,hypothesis_pass P3 absent
 ch10,maintenance tilt,tested-killed,hypothesis_pass P4 absent; batch1 M1 absent
 ch11,electrical-load tilt,tested-killed,hypothesis_pass P6 absent
+ch12,seasonal-demand-cycle: calendar peaks,evidence-partial,seasonal z confirmed; spike links weak
+ch13,refinery-operations: utilization, turnarounds, complexity, outages,evidence-partial,T1 direction real; rest untested
+ch14,capacity-structure: sticky entry/exit,closures,conversions,untested,
+ch15,crude-supply-and-flows: OPEC+,shale,exports,mix,untested,
+ch16,product-trade: import/export arbitrage,untested,
+ch17,storage-cycle: injection, winter fill, tank bottoms,evidence-partial,injection confirmed (P2); rest untested
+ch18,pipeline-logistics: Colonial batches, regional dislocations,untested,
+ch19,flow-positioning: COT, OI, curve, carry, speed,evidence-partial,speed from rounds 8-9; COT/OI untested
+ch20,structural-events: IMO2020, COVID, sanctions, EV, efficiency,evidence-partial,events documented; m7 confirms drift
+ch21,market-structure: participants and instruments,untested,
+ch22,crude-quality-detailed: quality mix -> refinery value,constrained,no free quality series
+ch23,weather-regime: cold, hurricanes, freeze,evidence-partial,cold confirmed (P1); hurricanes/freeze untested
+ch24,demand-structure: subgrades, octane, ethanol, travel shifts,untested,
+ch25,model-components: m = norm + D + S + B + R, regime gate,proposed,Phase 4 assembly
