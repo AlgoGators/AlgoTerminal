@@ -76,6 +76,8 @@ redo), CONSTRAINED (data).
 | Derived stop pack (nat 99%/2% defaults) | FALSIFIED vs old controls (OOS 1.87 vs 2.14); policy anchors matter | derived_controls.md |
 | Unified scale (budget/ES5) | HOLD-equivalent (0.468) | derived_controls.md |
 | Lookback 90 window | plateau confirmed (OOS 2.48/FULL 2.28 NEW) | derived_controls.md |
+| Derived-controls sweep | INVALID (anchor TRAIN t 0.00 vs expected 1.11) | derived_controls_sweep.md |
+| Reproducibility bar | NEW RULE: sweeps must first reproduce the base anchor | derived_controls_sweep.md |
 ## Rule
 
 Every future claim enters here with its evidence level, method, and
