@@ -151,3 +151,4 @@ ch28,chain-per-complex-overlay,chain,Brent legs with per-complex de-risking
 ch29,chain-cushing-ratio,chain,Cushing stocks/capacity utilization ratio
 ch30,chain-multi-leg-f2,chain,Hold all crushed cross legs by depth
 ch31,chain-storage-component,chain,Storage as model component B_t with interactions
+ch32,chain-regime-model,chain,Seasons as regimes: comp long / norm+exp rules

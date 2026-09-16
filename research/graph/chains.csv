@@ -30,3 +30,4 @@ ch28,per-complex-overlay: Brent legs with per-complex de-risking,resurrect-candi
 ch29,cushing-ratio: stocks/capacity ratio,tested-killed,never tested
 ch30,multi-leg-f2: all crushed cross legs by depth,tested-kill-at-book, retained-leg-level V2 (0.735/-64.75%),open variant from batch1
 ch31,storage-component: B_t with interactions,model-candidate,model-first recheck
+ch32,regime-model: regime x margin states, transitions,evidenced,regime_state.md (comp long +21%, norm stretch -4.4%, sticky transitions)
