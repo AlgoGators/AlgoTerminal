@@ -29,6 +29,10 @@ redo), CONSTRAINED (data).
 | Regime x margin structure (comp long/exp stretch short) | DIRECTIONAL | overlap tables; clean validate only L side | regime_state.md + hold_validation.md |
 | Cushing ratio / crude-glut / load / maintenance / propane-gas | FALSIFIED | Tier 1 | batch2 + probes |
 
+| Champion edge survives 10/20 and 20/40 costs | HOLD | clean blocks | direction1.md |
+| Champion OOS SR not explained by <=1000 trials | HOLD | deflated Sharpe ~1.0 | direction1.md |
+| Overlay forgives ~73pp gross; top-10 capture ~35%; 2014-16 flat | CONFIRMED-STAT | clean block ledger | direction1.md |
+| CL yfinance vs EIA settlement level-consistent | PARTIAL | corr 0.997, 2% abs; others constrained | direction1.md |
 ## Rule
 
 Every future claim enters here with its evidence level, method, and

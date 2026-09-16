@@ -33,3 +33,6 @@ engine/eia/raw_*.csv (Phase 3, 2027-01-05 update)
   engine/eia/raw_WPRSTUS1.csv
     sha256: 531d6fc75c166de73276d05e21e1729afb2900711011c243e680e1e2dfc00aab
     note: propane stocks, Phase 3 probe -> Batch 2 L5b
+  engine/eia/raw_pri_fut_RCLC1.csv
+    sha256: 9b7db7e124479b9033ec1a00d315f9f1d3e821a962012e2f246a15346cac33ff
+    note: EIA Cushing WTI weekly (settlement cross-check)
