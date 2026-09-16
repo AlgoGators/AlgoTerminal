@@ -31,7 +31,7 @@ gaps found in the v1 review:
 | 1 Side structure | done (mirror test) | findings/phase1_findings.md |
 | 1R Side structure (mechanism-based) | done | findings/phase1r_findings.md |
 | 2 Basket + depth | medium | preregistered |
-| 3 Flow modeling | medium | preregistered |
+| 3 Flow modeling | done | findings/phase3_findings.md |
 | 4 Representation | expensive | preregistered |
 
 Preregistration docs live in `research/`. Each phase gates the next.

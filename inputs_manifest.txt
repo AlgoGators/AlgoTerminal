@@ -15,3 +15,18 @@ engine/factor_book.py
   note:   byte-identical copy of the frozen factor engine
 
 Any change to an input requires a new manifest entry. Never edit in place.
+
+engine/eia/raw_*.csv (Phase 3, 2027-01-05 update)
+  engine/eia/raw_WCESTUS1.csv
+    sha256: 0f92be40c4f918baaf0ef53d516a0b0fe6c4d2f6f46c690cf142c12634992d5c
+  engine/eia/raw_WDISTUS1.csv
+    sha256: 17ab3bd0a5c29df6080c54e47c698c38aafc3b386bbd71db0bcc67d17403fd66
+  engine/eia/raw_WGTSTUS1.csv
+    sha256: dde61498f80f1aa8b1bcc0af9c6ad170e33585a0866d30398e90375b91c14817
+  engine/eia/raw_WPULEUS3.csv
+    sha256: 466c853cd601a70f473737fb694ee49c8aeda0355c6825d08bf6f559bb121b29
+  engine/eia/raw_W_EPC0_SAX_NUS_MBBL.csv
+    sha256: 876f825f6e877435f279be75668ac72260a35b464fa9a94902a2997ded9e63e1
+  engine/eia/raw_W_EPC0_SAX_YCUOK_MBBL.csv
+    sha256: 93432f7ccab22f2cb0ae1370db3e0b0957df65877bd8418fe1ca28edf6cfad55
+  engine/eia/fetch_eia_phase3.py (fetch script, key never stored)
