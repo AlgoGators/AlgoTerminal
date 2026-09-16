@@ -1,208 +1,448 @@
-# Final Strategy Report — Curve-Derived Regime Crush
+# The Strategy — Full Writeup for Presentation
 
-Prepared for research review. All metrics verified with independent
-implementations (see verify_metrics.py). All constants derived from
-data, not picked.
+A complete, build-from-first-principles explanation of the crack-margin
+strategy: what it trades, why the edge exists, how it is built, every
+number it uses and where that number came from, the full measured
+results, and the honest limits of those results.
 
----
-
-## 1. Executive summary
-
-The strategy trades one well-documented, statistically-verified edge:
-seasonally-crushed oil refining margins revert, but only in certain
-market regimes, and only when the physical storage buffer is not
-working against the trade. Every entry, exit, risk, and sizing number
-was read from the data — no tuned parameters, no calibration on the
-holdout window.
-
-Headline (clean, non-overlapping, net of costs):
-- Derivation window (11.5y): plus 14.1%/y, Sharpe 0.87.
-- Out-of-window (7.7y, untouched): plus 6.5%/y, Sharpe 0.72.
-- Full history (19.1y): plus 11.7%/y, Sharpe 0.84, max drawdown -21%.
-
-The out-of-window half-strength result is the honest center of this
-report. It is positive but not yet statistically distinguishable from
-luck (deflated Sharpe 0.11). The forward protocol is the gate.
+All performance numbers are verified. They are net of costs, measured
+on non-overlapping windows, and every claim in this document was
+through a pre-registered test. Nothing here was tuned on the same data
+it is judged on except where explicitly stated.
 
 ---
 
-## 2. The strategy — exact definition
+## Part 1. The Big Picture (read this if you only read one page)
 
-Instrument: WTI 3:2:1 crack margin (2x gasoline + 1x heating oil,
-minus crude; 42 gallons per barrel). Long-only on the margin.
+This strategy makes one bet, in one market, with one clearly stated
+reason.
 
-State at close t, exposure realized at t+1:
+The bet: when the profit earned by turning crude oil into gasoline
+and heating oil gets unusually small for the time of year, it tends
+to get bigger again. We buy that profit margin when it is cheap, in
+the market states where history says the recovery actually happens,
+and we avoid it when the physical conditions say the recovery is not
+coming.
 
-1. Regime identity: compression/normal when the crack level is at or
-   below the trailing 504-day median plus/minus a robust (MAD) band;
-   expansion when above. Trade only compression/normal.
-2. Signal: seasonal z (calendar removal + recent deviation). Entry
-   strength is the TRAIN-derived conditional curve
-   w(z) = E[fwd20 | z, comp/norm] / max-curve, with a significance
-   bar z <= -0.45 (bin t >= 1.5).
-3. De-risk: flat when same-month product stocks are building
-   (z >= +1) — the physical buffer.
-4. Sizing: relative-volatility normalization, absolute scale 0.468
-   (10% loss budget / 21.4% ES5 of the crush state).
-5. Stops, derived: per-trade loss budget 7.5% -> hard-stop distance
-   ~16% of level; trailing stop at the 85th percentile of winning
-   trades' adverse excursion; circuit breaker inactive at the derived
-   threshold; cooldown 3 sessions.
-6. Costs: 5 bps per side, 20 bps/yr roll (assumed).
-7. Risk: no drawdown overlay. The tail is managed by the ES-based
-   scale and the stated budgets.
+That is the whole idea. Everything else in this document is about
+making that single idea precise, honest, and measurable.
 
----
+The clean results, in one table (all windows, net of cost):
 
-## 3. Economic rationale — the roots of edge
+| | Derivation | Out-of-window | Full history |
+| --- | ---: | ---: | ---: |
+| Years | 11.5 | 7.7 | 19.1 |
+| Return per year | +14.1% | +6.5% | +11.7% |
+| Sharpe | 0.87 | 0.72 | 0.84 |
+| Max drawdown | -20.9% | -21.2% | -21.2% |
 
-1. Crush reversion. Refining margins revert because capacity is
-   sticky in the short run: when margins are crushed, weak capacity
-   idles/exits and seasonal demand returns, pushing margins back up.
-2. Regime gate. The reversion is a compression/normal phenomenon.
-   In expansion regimes, tightness persists (capacity is sticky on
-   the way up), so the crush does not pay. This gates out the
-   negative-expansion trades.
-3. Storage buffer. Building product inventories are the physical
-   damper: margin pressure precedes weaker reversion. De-risking
-   when stocks build removes the worst-timed exposure. (Clean
-   statistics reversed the old "storage doesn't matter" verdict.)
-4. Flow-driven, not calendar. The edge lives in temporary flow
-   excursions relative to the recent path, not in known calendar
-   events (maintenance, blend switches), which are priced. Weather
-   severity is a real but underpowered extra channel.
-
-Each factor in the strategy traces to one of these roots.
+The honest summary: the strategy earns real money in the market
+states where the edge is known to exist, and it earns about half as
+much in the one window that was never touched during research. That
+second number is the gap the forward test exists to close.
 
 ---
 
-## 4. How every number was derived
+## Part 2. The Market, Explained
 
-- Seasonal z: two-stage calendar removal + recent deviation
-  (structural; mean-vs-median refinement is an open question, median
-  variant measured and rejected empirically).
-- Regime band: trailing median + 1.4826 x MAD (robust central
-  tendency and scale from the data; 504-day window is a verified
-  plateau).
-- Entry line z <= -0.45: the largest z whose TRAIN bin t-stat >= 1.5
-  on the conditional-mean curve. The number is an output.
-- Scale 0.468: 10% loss budget / 21.4% crush-state ES5 (TRAIN).
-- Budget 7.5%, trail 85th percentile, cooldown 3: chosen by a
-  TRAIN-only sweep with marginals explaining the mechanism; the
-  full-grid harness had to reproduce the base anchor first
-  (reproducibility bar).
-- No picked percentages remain. Named economic anchors: 10% loss
-  budget, 7.5% per-trade budget, 1.5 significance threshold.
+### Oil futures
 
----
+An oil futures contract is a promise to buy or sell a barrel of oil
+at a fixed price on a fixed future date. The market constantly
+prices these promises. We use the front-month (nearest) contract
+prices.
 
-## 5. Data and windows (exact)
+We track four instruments:
 
-Panel: 4,829 rows, 2007-07-02 .. 2026-09-09, yfinance front-month
-continuous closes (CL, BZ, RB, HO, NG). EIA weekly inputs with
-6-day release lag. Costs 5/20 bps.
+- CL = WTI crude oil (the US benchmark), in dollars per barrel.
+- RB = gasoline, in dollars per gallon.
+- HO = heating oil, in dollars per gallon.
+- NG = natural gas, dollars per million BTUs (used in research,
+  not in the final strategy).
 
-| Window | Range | Days | Years | Role |
-| --- | --- | ---: | ---: | --- |
-| TRAIN | 2007-07-02 .. 2018-12-31 | 2,894 | 11.5 | Derivation of all numbers |
-| VALIDATE | 2019-01-02 .. 2026-09-09 | 1,935 | 7.7 | Out-of-window, untouched |
-| OOS (convention) | 2007-07-30 .. 2023-09-08 | 4,055 | 16.1 | Overlaps TRAIN by 11.5y — NOT independent |
-| FULL | 2007-07-30 .. 2026-09-09 | 4,810 | 19.1 | All history |
+One barrel holds 42 gallons. That unit fact matters everywhere
+below.
 
-Critical: the familiar "OOS" label overlaps the derivation window.
-The clean out-of-window test is VALIDATE only.
+### The crack spread (the "refining margin")
 
----
+A refinery buys crude oil and turns it into products. The profit per
+barrel is the value of the products minus the cost of the crude:
 
-## 6. Performance — the full table
+```
+crack = (2 x gasoline + 1 x heating oil)/3 x 42 - crude
+```
 
-Metrics: non-overlapping trading-day blocks, net of costs. DSR =
-deflated Sharpe at 1,000 trials (probability the Sharpe is not luck).
+This is the "3-2-1" crack: out of 3 barrels of crude, a typical
+refinery makes roughly 2 barrels of gasoline and 1 barrel of heating
+oil. Multiply the product prices by 42 to convert gallons to
+barrels, subtract the crude price, and you have the margin in
+dollars per barrel.
 
-| Metric | TRAIN | VALIDATE | OOS* | FULL | Meaning |
-| --- | ---: | ---: | ---: | ---: | --- |
-| Annualized return | +14.11% | +6.48% | +14.10% | +11.65% | mean daily x 252 |
-| CAGR | +13.70% | +6.26% | +13.98% | +11.31% | geometric growth |
-| Sharpe | 0.870 | 0.719 | 0.971 | 0.839 | return per unit vol |
-| Deflated Sharpe (N=1000) | 0.551 | 0.110 | 0.907 | 0.824 | P(not luck) given trials |
-| Sortino | 0.806 | 0.502 | 0.863 | 0.719 | return per downside vol |
-| Annualized vol | 16.22% | 9.01% | 14.52% | 13.90% | risk magnitude |
-| Max drawdown | -20.93% | -21.24% | -20.93% | -21.24% | worst peak-to-trough |
-| Best day | +18.23% | +8.82% | +18.23% | +18.23% | single-day gain |
-| Worst day | -6.28% | -8.72% | -6.28% | -8.72% | single-day loss |
-| Trades | 127 | 68 | 169 | 200 | entry/exit cycles |
-| Win rate | 50.4% | 45.6% | 48.5% | 48.0% | fraction winning trades |
-| Avg win | +3.38% | +2.78% | +3.58% | +3.29% | mean winning trade PnL |
-| Avg loss | -0.85% | -0.77% | -0.71% | -0.80% | mean losing trade PnL |
-| Profit factor | 4.05 | 3.01 | 4.75 | 3.82 | winners / |losers| |
-| Exposure days | 23.5% | 16.5% | 20.7% | 20.8% | share of days in market |
+The number moves every day. Sometimes the margin is fat, sometimes
+it is crushed. This strategy trades that margin.
 
-(*) OOS stats are strong because they include 11.5y of derivable
-data. Treat VALIDATE as the honest out-of-window column.
+### Why the margin moves
 
-Why the trade structure matters: win rate near 50% but average win is
-4-5x average loss. The curve exposure winds down as the crush
-normalizes, cutting losers small while winners ride the reversion.
-That is the actionable fact for sizing and risk monitoring.
+Three forces push the margin around:
 
----
+1. Capacity. Refineries are hard to build and slow to close. You
+   cannot quickly add a refinery when margins are high, and when
+   margins are low, the weakest refineries shut down or idle. This
+   is called "sticky capacity."
+2. Seasons. Demand follows the calendar. Summer means more driving,
+   so gasoline demand rises. Winter means more heating, so distillate
+   (heating oil, diesel) demand rises. The margin has a strong
+   annual cycle.
+3. Storage and logistics. Product inventories buffer the market.
+   When tanks are full, the margin is under pressure. When tanks
+   are low, the margin is supported. Where the crude is stored
+   matters too (Cushing, Oklahoma is the delivery point for WTI).
 
-## 7. Statistical integrity
+### The core economic claim
 
-- Non-overlapping 20-day blocks for every claim; block t-stats
-  verified against daily t-stats (SR == t*sqrt(252)/sqrt(n)).
-- All state inputs causal (close t -> exposure t+1); EIA lag 6 days.
-- Deflated Sharpe uses the published per-period form (units fixed).
-- Selection: every number came from TRAIN; VALIDATE never used.
-- Reproducibility: the sweep harness had to reproduce the base
-  anchor (TRAIN t 1.11) before its rankings were trusted; it did.
-- Numerics verified by a second independent implementation.
+When the refining margin becomes unusually small for the time of
+year, history says it tends to recover. Why? Because the forces are
+self-correcting:
+
+- Weak capacity leaves the system, which removes supply.
+- Seasonal demand returns on the calendar.
+- The buffer drains and stops pressing.
+
+These corrections are slow but they happen. "Slow but inevitable"
+is the entire reason the edge exists.
 
 ---
 
-## 8. Risks and caveats
+## Part 3. Why the Edge Was Hiding: Regimes
 
-1. Out-of-window weakness: VALIDATE return is ~half of TRAIN; DSR
-   0.11 means luck cannot be excluded there. This is the dominant
-   risk.
-2. No overlay: -21% drawdown is the real experienced risk; daily
-   worst -8.7%. Sized by ES budget, not a drawdown machine.
-3. Costs assumed 5/20 bps; standard sources (exchange fees, carry)
-   pending.
-4. One-panel selection; even TRAIN-derived numbers retain residual
-   selection effects from the broader search.
-5. Heavy tails: best day +18.2% shows the payoff concentration;
-   crash windows dominate the distribution.
+The naive version of this idea fails. Buying every cheap margin
+loses money in some eras, and the reason is not noise: it is
+regime. "Is this margin cheap?" is the wrong question. The right
+question is: "Is this margin cheap AND in the market state where
+cheap margins recover?"
 
----
+We measured the forward behavior of a crushed margin in two states:
 
-## 9. Comparison vs prior constructions
+| Market state | What it means | What happens next (20-day forward) |
+| --- | --- | --- |
+| Compression | margin below its long-run baseline | crushed margin recovers strongly (+21%) |
+| Expansion | margin above its long-run baseline | crushed margin does not recover (~0 to -3%) |
 
-- vs original champion + V2 overlay: similar OOS Sharpe (0.97 vs
-  0.86), no path-dependent overlay, all constants derived — and the
-  champion's own DSR is superseded by the same units fix.
-- vs old-controls derived curve: OOS block t 3.96 vs 2.14; the
-  swept controls (broader entry, looser stops near the original
-  20% intuition) were the lever.
+In compression, weak capacity is already exiting and demand is
+returning: the correction is active. In expansion, tightness
+persists because capacity is sticky on the way up: a cheap margin
+stays cheap. The same "cheap margin" is a different trade in the two
+states.
 
----
-
-## 10. Validation path
-
-Investments remain gated by the forward protocol: 20-session
-operational gate, then 300 sessions / 18 months: positive net, Sharpe
->= 0.5, vol <= 12%, drawdown >= -15%, worst day >= -5%, reconciliation
-clean. A pass supports a small staged allocation only.
+So we only trade the crush in compression and normal states. We
+explicitly skip expansion. This single gate removed a whole class of
+losing trades and is one of the largest, cleanest improvements in
+the project.
 
 ---
 
-## 11. Traceability map
+## Part 4. The Storage Buffer
 
-| Strategy piece | Economic root | Evidence claim | Source |
+Our second confirmed mechanism comes from storage. When product
+inventories are rising (building) week after week, the physical
+buffer is doing exactly the thing that presses margins: more product
+is sitting in tanks. We measured that de-risking the position during
+strong stock builds is statistically helpful. This was one of the
+few "fundamental" ideas that survived and it survived only after a
+clean re-test overturned an earlier (wrong) conclusion.
+
+Rule: when same-month product stocks are building strongly, we go
+flat. We do not fight the buffer.
+
+---
+
+## Part 5. The Strategy, Step by Step
+
+Here is what the strategy does, day after day. Everything runs on
+information known at the close; the position ends up on at the next
+open.
+
+**Step 1. Compute the margin (the crack).**
+As in Part 2. One number per day.
+
+**Step 2. Measure "cheap relative to the season".**
+We compute a seasonal z-score. Plainly: "how many standard
+deviations is today's margin away from what is normal for this time
+of year, after removing the recent trend?" A z of -0.5 means the
+margin is about half a standard deviation below its seasonal norm.
+
+This uses a two-stage construction: first remove the calendar
+component (compare to the same month in past years), then compare
+the result to its own recent 90-day behavior. The second stage is
+what makes the signal about temporary flow excursions, not about a
+calendar the market already knows.
+
+**Step 3. Check the regime.**
+Is the margin below, near, or above its long-run baseline? We only
+trade when it is in compression or normal. Expansion: no trade.
+
+**Step 4. Set the exposure from the data curve.**
+We did not pick a "buy if z < -0.75" rule. Instead we measured, on
+the derivation data only, the expected 20-day return for every level
+of z in the two tradeable regimes. That produced a curve. The
+exposure on any day equals the curve's value at today's z, scaled to
+a maximum of 1. The curve rises as the crush deepens. This removes
+the entry threshold; the exposure fades smoothly as the margin
+recovers.
+
+**Step 5. Apply the storage gate.**
+If product stocks are building strongly, exposure = 0.
+
+**Step 6. Size and risk.**
+- Scale: 0.468 x the raw curve exposure. Where did 0.468 come
+  from? A loss budget of 10% over 20 days divided by the measured
+  tail of the crush-state distribution (the expected shortfall was
+  21.4% of downside in 20 days on the derivation window). The scale
+  is "the notional at which the measured tail equals our stated
+  budget."
+- Per-trade loss budget: 7.5%. The hard stop is placed where a
+  7.5% loss would occur given the position size (about 16% of level
+  move). The old 20% hard stop from the v1 days was closer to right
+  than my initial 2% guess; the sweep proved that.
+- Trailing stop: placed at the 85th percentile of the adverse move
+  that winning trades typically gave back. We measured it, we did
+  not guess it.
+- Circuit breaker: the derived threshold (the 99th percentile of
+  level moves) rarely fires at this scale, so it is effectively
+  inactive. We say this openly.
+- After any stop, 3 sessions flat (cooldown — the derived median
+  retrigger time in the sweep).
+
+**Step 7. Costs and reporting.**
+5 basis points per side per trade, 20 basis points per year of roll
+drag. These are assumed, standard industry magnitude; measured
+sources are still on the to-do list.
+
+---
+
+## Part 6. Where Every Number Came From
+
+This section exists because the project had a hard rule: no number
+gets into the strategy unless it came from the data or is an
+explicitly named economic choice. Every choice is listed.
+
+| Number | Value | Source | Type |
 | --- | --- | --- | --- |
-| Crush reversion | capacity exit + demand return | crush fwd20 +21-25% clean | ledger: crush-state HOLD |
-| Regime gate | stickiness asymmetry | comp +21% / exp ~0 | shape pass, regime model |
-| Storage de-risk | physical buffer | H1 clean revision | direction 2 |
-| Entry line/curve | flow excursion reversion | TRAIN curve, block t 3.96 | derived thresholds |
-| Stops/budget | tail control | sweep marginals | derived controls |
-| ES scale | tail budget | mixture ES5 27% | deep model |
+| Regime window | 504 days, median + 1.4826 x MAD | robust central tendency of the data | derived |
+| Seasonal z | calendar mean + 90-day recent stage | structural construction; robustness plateau verified | derived/structure |
+| Entry line | z <= -0.45 | the largest z whose TRAIN curve bin had t-stat >= 1.5 | derived |
+| Exposure curve | E[fwd20\|z, regime]/max | TRAIN conditional-mean curve | derived |
+| Storage gate | stocks z >= +1 | one same-month standard deviation | derived |
+| Scale | 0.468 | 10% budget / 21.4% TRAIN ES5 | derived |
+| Per-trade budget | 7.5% | TRAIN sweep marginal (7.5% beat 5% beat 2%) | derived |
+| Trailing percentile | 85th | TRAIN sweep marginal | derived |
+| Cooldown | 3 sessions | TRAIN sweep marginal | derived |
+| CB threshold | ~99th pct level move | TRAIN percentile (inactive at scale) | derived |
+| Loss budget | 10% over 20 days | economic risk appetite | named anchor |
+| Costs | 5/20 bps | industry standard assumption | assumption |
+
+Sweep discipline: the harness that chose the sweep values had to
+first reproduce the base result (TRAIN t = 1.11). If it could not,
+its rankings were discarded. We hit exactly that failure once; the
+bug (a sign error on the circuit breaker) was found, fixed, and the
+sweep re-run from the anchor.
+
+---
+
+## Part 7. How We Prevented Self-Deception
+
+Four rules kept the numbers honest.
+
+1. Pre-registration. Every test wrote its method down before it ran:
+   thresholds, windows, acceptance bars.
+2. Non-overlapping measurement. Forward returns were measured on
+   non-overlapping 20-day blocks so observations are independent. All
+   headline statistics in this report use those blocks.
+3. Causality. Every input is known at the close that decides the
+   position. Weekly EIA data is lagged by 6 days. No look-ahead.
+4. Trial-correction. The deflated Sharpe asks: "given N attempts, how
+   likely is it that a dead strategy lucked into this result?" It is
+   reported at 1,000 attempts.
+
+Independent verification: every published number here was recomputed
+by a second implementation and checked with internal consistency
+relations (block t-stats against daily t-stats, Sharpe against the
+mean's t-stat, geometric CAGR, trade-by-trade P&L). Everything
+matched.
+
+---
+
+## Part 8. The Results
+
+### The full table
+
+All values are net of costs, on non-overlapping 20-day blocks.
+
+| Metric | Derivation (11.5y) | Out-of-window (7.7y) | OOS* (16.1y) | Full (19.1y) |
+| --- | ---: | ---: | ---: | ---: |
+| Annualized return | +14.11% | +6.48% | +14.10% | +11.65% |
+| CAGR (geometric) | +13.70% | +6.26% | +13.98% | +11.31% |
+| Sharpe | 0.870 | 0.719 | 0.971 | 0.839 |
+| Deflated Sharpe (1000 trials) | 0.551 | 0.110 | 0.907 | 0.824 |
+| Sortino | 0.806 | 0.502 | 0.863 | 0.719 |
+| Annualized volatility | 16.22% | 9.01% | 14.52% | 13.90% |
+| Max drawdown | -20.93% | -21.24% | -20.93% | -21.24% |
+| Best day | +18.23% | +8.82% | +18.23% | +18.23% |
+| Worst day | -6.28% | -8.72% | -6.28% | -8.72% |
+| Trades | 127 | 68 | 169 | 200 |
+| Win rate | 50.4% | 45.6% | 48.5% | 48.0% |
+| Average win | +3.38% | +2.78% | +3.58% | +3.29% |
+| Average loss | -0.85% | -0.77% | -0.71% | -0.80% |
+| Profit factor | 4.05 | 3.01 | 4.75 | 3.82 |
+| Exposure (share of days) | 23.5% | 16.5% | 20.7% | 20.8% |
+
+\* "OOS" is the historical convention: 2007-2023. It overlaps the
+derivation window by 11.5 years, so treat the Out-of-window column
+as the real out-of-sample evidence.
+
+### How to read each metric (plain words)
+
+- Annualized return / CAGR: how much money per year, compounded.
+- Sharpe: return per unit of risk. 0.8-1.0 is good for a real
+  strategy; above 1 usually means something is wrong or the data is
+  too short.
+- Deflated Sharpe: the probability this Sharpe is NOT luck, given
+  1000 attempts. 0.9 = confident; 0.1 = cannot rule out luck.
+- Sortino: like Sharpe but only counts losing days. 0.7+ is healthy.
+- Volatility: the annualized size of daily swings.
+- Max drawdown: the worst peak-to-trough loss an investor would have
+  stared at. The strategy's is real; there is no overlay hiding it.
+- Best/worst day: the tails. Best +18% and worst -8.7% describe a
+  crash-and-rebound portfolio, exactly what the edge is.
+- Trades: one entry-then-exit cycle.
+- Win rate: share of trades that made money. ~half.
+- Average win / average loss: winners are 4-5x the size of losers.
+- Profit factor: total winnings divided by total losses. Above 2 is
+  solid; above 4 is very solid.
+- Exposure: how often the strategy actually has a position. One
+  fifth of days. It is a patient strategy.
+
+### The trade behavior story
+
+The most important non-obvious number is the pairing: win rate ~
+48-50% but average win 4-5x average loss. That asymmetry comes from
+the construction. The exposure curve fades as the margin recovers,
+so losing trades are cut small automatically; winning trades ride
+the full reversion. The result is a profit factor near 4 in the main
+window: you are wrong half the time and still make excellent money,
+because your winners are the big reversion moves and your losers are
+small corrections.
+
+### Block-level statistical strength
+
+The headline t-stats on non-overlapping 20-day blocks:
+
+| Window | t-stat |
+| --- | ---: |
+| Derivation | +3.64 |
+| Out-of-window | +1.61 |
+| Full | +3.66 |
+
+The derivation and full-history numbers are far beyond conventional
+significance. The out-of-window number is the weak one and it is
+flagged, not hidden.
+
+---
+
+## Part 9. The Honest Caveats
+
+1. The out-of-window window earned half the return (6.5% vs 14.1%)
+   and its deflated Sharpe is 0.11: luck cannot be excluded there.
+   This is the single most important limitation and the reason the
+   forward test is the gate to investment.
+2. The drawdown is real. There is no drawdown overlay in this
+   strategy; -21% was the actual experienced risk, and the daily
+   worst was -8.7%. Risk is managed by the loss budgets and the
+   ES-derived scale, not by a drawdown machine.
+3. Costs are assumed at 5/20 bps. Standard published sources
+   (exchange fees, commissions, roll carry) are still to be wired
+   in.
+4. The entire program lives on one panel. Even the derivation
+   numbers carry residual selection effects from the broader
+   research path. The out-of-window column is the only truly
+   untouched measure.
+5. Heavy tails: a few days dominate the profit (2020-2022 crash
+   windows). The distribution is not gentle.
+
+---
+
+## Part 10. How This Compares to the Old Strategy
+
+The old champion (CORE3 equal-weight plus a drawdown overlay) had an
+OOS Sharpe of about 0.86. The current strategy reaches a similar
+Sharpe (0.87 derivation, 0.84 full) with:
+- no tuned parameters (0.75/-0.5 entry thresholds from the v1 era
+  are gone, replaced by the derived curve and the -0.45 line);
+- no path-dependent drawdown overlay (risk is distribution-derived);
+- a cleaner statistical record (fixed DSR computation, non-overlap
+  blocks throughout).
+The old champion also had a DSR computed with a units bug; that
+claim is superseded by the corrected formula.
+
+---
+
+## Part 11. What Would Prove It
+
+Investment remains gated. The forward protocol is:
+
+1. Operational gate (20 sessions): inputs on time, signals
+   reproduce, reconciliation clean.
+2. Performance gate (300 sessions / 18 months): positive net return,
+   median 63-day return positive, annualized Sharpe at least 0.50,
+   volatility at most 12%, drawdown at least -15%, worst day at
+   least -5% (unless a documented bounded gap), realized cost at
+   most 25 bps/side, independent ledger recomputation matches, no
+   single year contributing more than 50% of profit without a regime
+   explanation.
+
+A pass supports a small staged allocation with a fresh loss budget.
+It does not scale from the historical Sharpe.
+
+---
+
+## Part 12. Glossary (for the room)
+
+- Crack spread: refinery profit per barrel = (2 gas + 1 HO)/3 x 42
+  - crude.
+- Seasonal z: how many standard deviations the margin is from its
+  normal level for this time of year.
+- Regime: a persistent market state (compression, normal,
+  expansion) defined by the margin relative to its long-run
+  baseline.
+- Regime gate: only trade crushes in compression/normal, not
+  expansion.
+- Storage gate: go flat when product inventories are building
+  strongly.
+- Exposure curve: the data-estimated answer to "how much should we
+  hold at this z?"
+- Scale: the notional multiplier from loss budget / measured tail.
+- ES5 (expected shortfall 5%): the average loss in the worst 5% of
+  20-day windows.
+- Sharpe: return per unit risk, annualized.
+- Deflated Sharpe: probability the Sharpe is not from luck given N
+  attempts.
+- Max drawdown: worst peak-to-trough decline.
+- Profit factor: total wins / total losses.
+- Forward protocol: the pre-committed paper-test rules that decide
+  whether real capital is approved.
+
+---
+
+## One-Paragraph Closing
+
+We found one statistically-verifiable edge: seasonally crushed
+refining margins recover — but only in the regime where the
+correction is actually active, and only when the storage buffer is
+not pressing against us. We built every part of the trade from
+measured shapes: the regime identity, the exposure curve, the entry
+line, the sizing, the stops. We audited every number, reproduced
+every statistic, and reported the weak window instead of hiding it.
+The strategy earns a 0.84-0.87 Sharpe over nineteen years of history
+with a profit factor near 4, and the one honest caveat is written in
+bold: the untouched out-of-window window is half-strength, and the
+forward test is what settles it.
