@@ -40,6 +40,11 @@ redo), CONSTRAINED (data).
 | Crash-put overlay uneconomic | FALSIFIED (prem 40-73% of clean mean) | direction2.md |
 | Crush state fwd20 positive | HOLD (OOS t=2.65 n=48) | direction2.md |
 | Joint crisis filter | CONSTRAINED (6 days; reduced into crush) | direction2.md |
+| HMM regime identity rule (comp/comp+norm x crush) | HOLD-clean (t 1.93/2.12) | non-overlap OOS, custom HMM | direction3.md |
+| Rebuilt median norm crush cell | DIRECTIONAL (n=17, t=1.38, wide CI) | non-overlap | direction3.md |
+| Utilization trend +0.25 pts/yr | CONFIRMED-STAT | decade slope | direction3.md |
+| Seasonal amplitude trend rising | CONFIRMED-STAT (era-driven caveat) | decade slope | direction3.md |
+| Crush state mixture: mean +11.7%, P(>10%)=49%, ES5 -27% | HOLD-shape | mixture model | direction3.md |
 ## Rule
 
 Every future claim enters here with its evidence level, method, and
