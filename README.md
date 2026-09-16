@@ -40,11 +40,14 @@ Preregistration docs live in `research/`. Each phase gates the next.
 
 ```
 README.md
-phase0_regression.py   Phase 0 gate: reproduce v1 champion in v2 engine
-engine/                corrected v4 engine snapshot + frozen panel
-results/               per-phase result CSVs
-findings/              per-phase decision memos
-research/              per-phase pre-registration docs
+inputs_manifest.txt    frozen input hashes
+engine/                corrected v4 engine snapshot + frozen panel + data inputs (eia/weather/cot)
+research/              methodology, pre-registrations, relation graph (graph/)
+findings/              decision memos, final report, claims ledger
+results/               output CSVs
+scripts/               all v2 harnesses, tools, metrics, verification
+legacy/                v1-era base code, docs, and old result CSVs (from the original snapshot)
+discovery/             generated graphify outputs (gitignored)
 ```
 
 ## v1 references (read-only)

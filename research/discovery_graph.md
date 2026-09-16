@@ -5,16 +5,16 @@ Auto-discovery layer over the curated truth graph. Built on
 
 ## Outputs (generated, gitignored)
 
-- `graphify-out/graph.html` — interactive graph, open in browser.
-- `graphify-out/GRAPH_REPORT.md` — god nodes, surprising connections,
+- `discovery/graphify-out/graph.html` — interactive graph, open in browser.
+- `discovery/graphify-out/GRAPH_REPORT.md` — god nodes, surprising connections,
   suggested questions.
-- `graphify-out/graph.json` — raw graph data.
-- `graphify-out/manifest.json` — incremental update manifest.
+- `discovery/graphify-out/graph.json` — raw graph data.
+- `discovery/graphify-out/manifest.json` — incremental update manifest.
 
 ## Rebuild
 
 ```
-graphify-out/.graphify_python ... (venv at /home/sebas/.local/venvs/graphify)
+discovery/graphify-out/.graphify_python ... (venv at /home/sebas/.local/venvs/graphify)
 graphify export html          # after semantic/AST extraction
 ```
 
