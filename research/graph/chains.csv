@@ -25,8 +25,8 @@ ch23,weather-regime: cold, hurricanes, freeze,evidence-partial,cold confirmed (P
 ch24,demand-structure: subgrades, octane, ethanol, travel shifts,untested,
 ch25,model-components: m = norm + D + S + B + R, regime gate,proposed,Phase 4 assembly
 ch26,short-rebuild: expansion-regime short 10-20d hold,resurrect-candidate,p5_regime (rebuild pending)
-ch27,ngl-propane-winter: propane/NGL state -> gas and NG winter,tier1-pending,new connection ch1/ch23
+ch27,ngl-propane-winter: propane/NGL state -> gas and NG winter,evidence-partial (NG-side link; gas side absent),new connection ch1/ch23
 ch28,per-complex-overlay: Brent legs with per-complex de-risking,resurrect-candidate,Round4 reserve revived
-ch29,cushing-ratio: stocks/capacity ratio,tier1-pending,never tested
-ch30,multi-leg-f2: all crushed cross legs by depth,tier1-pending,open variant from batch1
+ch29,cushing-ratio: stocks/capacity ratio,tested-killed,never tested
+ch30,multi-leg-f2: all crushed cross legs by depth,evidence-confirmed (phenomenon monotone; construction open),open variant from batch1
 ch31,storage-component: B_t with interactions,model-candidate,model-first recheck

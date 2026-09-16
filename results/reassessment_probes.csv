@@ -1,0 +1,10 @@
+test,value
+N1_gas_winter_delta,-0.018463
+N1_ng_winter_delta,-0.089268
+N1_gas_summer_delta,-0.006006
+C1_fullness_delta,0.043114
+C1_combined_mean,0.055011
+C1_other_mean,0.096191
+C1_shuffled_mean,0.113856
+M1_multileg_sharpe,0.669520
+M1_singleleg_sharpe,0.588900
