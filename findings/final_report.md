@@ -489,6 +489,14 @@ no evaluated year was included in the data that produced its own
 decisions. Training is in-sample by construction; the single holdout
 is short; full contains training.
 
+Note on the Out-of-window column: the values shown there were
+computed with the configuration frozen as of 2018 (Sharpe 0.719,
+DSR 0.11). If the data-driven components are instead re-estimated on
+prior data each year (the walk-forward method), the same 2019-2026
+slice gives Sharpe 0.919, block t 2.00, DSR(1000) 0.29, profit
+factor 4.11 (results/walkforward_series.csv, sliced). Both views are
+honest; they differ only in whether the components are refit.
+
 ### How to read each metric (plain words)
 
 - Annualized return / CAGR: how much money per year, compounded.
