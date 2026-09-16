@@ -54,6 +54,11 @@ redo), CONSTRAINED (data).
 | H1 in book under regime gate | NULL (redundant) | final_strategy.md |
 | Final integration V2 | REJECTED; failed level = overlay interaction | final_strategy.md |
 | Champion remains deployable benchmark | HOLD | final_strategy.md |
+| F2 multi-leg breadth standalone | FALSIFIED/dropped (OOS CI incl 0) | model_book.md |
+| F3 Brent-WTI reversion standalone | FALSIFIED/dropped | model_book.md |
+| B1h = regime-gated crush + H1 de-risk | HOLD (OOS t 2.93 / FULL 3.33, neg 16%) | model_book.md |
+| Two-bet book diversification | NOT CONFIRMED in new architecture (B1h single sleeve wins) | model_book.md |
+| V2 overlay excluded from new construction | DESIGN (recurring constraint) | model_book.md |
 ## Rule
 
 Every future claim enters here with its evidence level, method, and
