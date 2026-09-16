@@ -36,3 +36,6 @@ engine/eia/raw_*.csv (Phase 3, 2027-01-05 update)
   engine/eia/raw_pri_fut_RCLC1.csv
     sha256: 9b7db7e124479b9033ec1a00d315f9f1d3e821a962012e2f246a15346cac33ff
     note: EIA Cushing WTI weekly (settlement cross-check)
+  engine/eia/raw_ng_storage_sum.csv
+    sha256: 1ff396d30bba48ff2d34dfa394e393552144735512d8469aaa3f76cea50cdf4c
+    note: natgas working gas sum of 6 regions, 2010+
