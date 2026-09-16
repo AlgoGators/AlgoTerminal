@@ -1,0 +1,12 @@
+id,name,status,source_finding
+ch1,blend-chemistry: RVP -> butane -> propane -> blend cost -> crack,evidence-partial,p2_blend confirmed; butane/propane link untested
+ch2,spring-preparation: spring deadline = blend switch + maintenance + injection,evidence-confirmed,p2_blend
+ch3,cold-vehicle-demand: cold -> fuel consumption -> gasoline demand -> gas crack,evidence-confirmed,p1_cold (winter monotone)
+ch4,cold-relative-signal: gas up / HO down after cold,evidence-confirmed,p1_cold
+ch5,brent-quality: quality -> refinery value -> WTI discount,constrained,no free quality series
+ch6,brent-logistics: Cushing fullness -> WTI discount,evidence-weak,phase3 H3 direction real but rare
+ch7,norm-drift: EV/efficiency/closures -> norm drift,evidence-confirmed,m7_drift
+ch8,regime-asymmetry: stretched reverts only in expansion,evidence-confirmed,p5_regime (4.7 sd)
+ch9,stock-build tilt,tested-killed,hypothesis_pass P3 absent
+ch10,maintenance tilt,tested-killed,hypothesis_pass P4 absent; batch1 M1 absent
+ch11,electrical-load tilt,tested-killed,hypothesis_pass P6 absent

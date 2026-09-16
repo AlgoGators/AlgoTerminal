@@ -1,0 +1,51 @@
+id,label,kind,note
+season,seasonal-calendar,concept,Demand cycle and regulatory calendar
+rvp,rvp-regulation,concept,EPA seasonal vapor pressure rule
+butane,butane-blendstock,concept,Cheap high-RVP blendstock
+summer-blend,summer-blend,concept,Low RVP by law (heat/ozone)
+winter-blend,winter-blend,concept,High RVP so engines start in cold
+propane,propane-ngl,concept,NGL market; butane spills in summer, is pulled in winter
+blend-cost,blend-cost,concept,Seasonal cost of gasoline blending
+gas-crack,gasoline-crack,concept,crack_gas = RB*42 - CL
+spring-event,spring-preparation-event,concept,Blend switch + maintenance + summer-grade injection coincide
+maintenance,maintenance-turnaround,concept,Planned refinery downtime pre-summer
+injection,summer-grade-injection,concept,Tank farm pre-build of summer gasoline
+cold,temperature-z,concept,NYC T2M same-month z (NASA POWER)
+fuel-consumption,per-mile-fuel-consumption,concept,Cold start, warmup, density drag, tire pressure
+gas-demand,gasoline-demand,concept,Retail gasoline demand
+ho-crack,heating-oil-crack,concept,crack_ho = HO*42 - CL
+heating-demand,heating-product-demand,concept,HO plus propane rural heating in winter
+wti-quality,wti-grade-quality,concept,Lighter sweeter than Brent
+brent-quality,brent-grade-quality,concept,38 API / 0.37% S
+refinery-value,refinery-value,concept,Light sweet yields more light products
+cushing,cushing-storage,concept,Cushing fullness binds WTI logistics
+export-regime,export-regime,concept,Pre-2016 trapped onshore; post-2016 globalized
+ev-share,ev-share,concept,Long-run gasoline demand dilution
+efficiency,efficiency-gain,concept,Fleet efficiency trend
+closures,refinery-closures,concept,Capacity exits over decades
+norm,norm-drift,concept,Seasonal norm moves with structure (M7)
+expansion,expansion-regime,concept,Margin above trailing 252d mean
+compression,compression-regime,concept,Margin below trailing 252d mean
+stretched,stretched-margin,concept,Seasonal z >= +0.75
+crush,crushed-margin,concept,Seasonal z <= -0.75
+reversion,reversion-forming,concept,Flow residual mean reversion
+store-build,product-stock-build,concept,Weekly product stock builds (demand proxy)
+wpr_propane,WPRSTUS1,data,EIA propane stocks 1993-2026
+wpuleus3,WPULEUS3,data,EIA refinery utilization weekly
+t2m_nyc,NYC-T2M,data,NASA POWER daily
+panel,panel_v2,data,Frozen futures panel CL BZ RB HO NG
+p2_blend,P2-blend-window-evidence,evidence,fwd20 1.8-(-3.1)% vs 8.3% far; vol 16% vs 9%
+p1_cold,P1-cold-severity-evidence,evidence,Winter monotone: +26.6% vs +15.2% fwd20
+p5_regime,P5-regime-asymmetry-evidence,evidence,Expansion -4.09% vs compression +3.52% fwd20; 4.7sd
+m7_drift,M7-norm-drift-evidence,evidence,crack_321 monthly means +4..+8 points 07-15 vs 16-26
+ch1,chain-blend-chemistry,chain,RVP calendar -> butane -> propane/NG -> blend cost -> crack
+ch2,chain-spring-preparation,chain,Spring deadline = blend switch + maintenance + injection
+ch3,chain-cold-vehicle-demand,chain,Cold -> fuel consumption -> gasoline demand -> crack
+ch4,chain-cold-relative-signal,chain,Cold -> gas up / HO down
+ch5,chain-brent-quality,chain,Quality -> refinery value -> WTI discount
+ch6,chain-brent-logistics,chain,Cushing fullness -> WTI discount
+ch7,chain-norm-drift,chain,EV/efficiency/closures -> norm drift
+ch8,chain-regime-asymmetry,chain,Stretched reverts in expansion only
+ch9,chain-stock-build,chain,Product builds scale crush reversion (killed Tier1)
+ch10,chain-maintenance,chain,Winter maintenance tightens supply (killed Tier1)
+ch11,chain-electrical-load,chain,Degree days -> run rates (killed Tier1)
