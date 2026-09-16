@@ -33,6 +33,41 @@ H3. Flow features work as scaling or tilt on positions, not as switches.
 - Shuffled feature timing.
 - Lag-inverted features.
 
+## Concrete tilt rules (stated before measuring)
+
+Data: EIA weekly series fetched 2007-01-05 .. 2026-09-04 (engine/eia/raw_*.csv).
+Codes selected: WGTSTUS1 gasoline, WDISTUS1 distillate, WCESTUS1 crude,
+W_EPC0_SAX_YCUOK_MBBL Cushing, WPULEUS3 utilization.
+WPRTOTUS1 (product supplied) and crude runs return empty from the API.
+Implied demand proxy = product stock draw (gasoline + distillate change).
+
+Feature pipeline (causal, reuse of the EIA experiment machinery):
+weekly changes -> same-month expanding z (min 12 obs) -> release date
+plus 6 days -> forward fill onto the daily panel -> scale = tilt.shift(1).
+
+The tilt is a position multiplier, never a switch. Thresholds +-1.0
+on the z-score, multipliers 1.25 / 0.75.
+
+| Tilt | Leg | Rule | Mechanism |
+| --- | --- | --- | --- |
+| T1 utilization | crack_321, cross | util_z <= -1 -> 1.25; >= +1 -> 0.75 | Utilization falling means capacity exit, faster reversion |
+| T2 demand (product draw) | crack_321, cross | draw_z >= +1 -> 1.25; <= -1 -> 0.75 | Draws mean demand support, stronger reversion |
+| T3 Cushing fullness | bzwti | fullness >= 0.85 and draw_z >= +1 -> 1.25; fullness >= 0.85 and draw_z <= -1 -> 0.75 | Tank tops clearing -> WTI discount closes |
+| T4 combined | all | T1 + T2 on cracks, T3 on bzwti | Joint flow state |
+
+Fullness = Cushing level / trailing 156-week max (capacity proxy).
+
+Books: baseline A (no tilt) must reproduce the frozen champion. Then
+A+T1, A+T2, A+T3, A+T4. Report IS/OOS raw and overlay.
+
+Controls (per tilt):
+1. Shuffled tilt timing: permute the tilt series in time, 20 seeds.
+2. Sign-flipped tilt: swap 1.25 and 0.75. Direction specificity.
+
+Combination rule from Phase 1R applies: a tilt joins the book only if
+it improves OOS Sharpe or drawdown for its leg without degrading the
+other legs.
+
 ## Deliverable
 
 Decision memo: v2 driver map. Written to `findings/phase3_findings.md`.
