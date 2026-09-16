@@ -80,6 +80,9 @@ redo), CONSTRAINED (data).
 | Swept controls | entry t=1.5, budget 7.5%, trail 85th, cool 0-3, CB inactive | derived_controls_sweep.md |
 
 | Reproducibility bar | NEW RULE: sweeps must first reproduce the base anchor | derived_controls_sweep.md |
+| DSR units | CORRECTED (was annualized-SR input; now per-period daily SR as published) | metrics_final.py |
+| DSR final config | OOS 0.907-0.960, FULL 0.824-0.912, TRAIN 0.551-0.710, VALIDATE 0.110-0.212 | metrics_final.csv |
+| DSR champion (earlier) | SUPERSEDED (same annualized-input bug) | harden_harness.py |
 ## Rule
 
 Every future claim enters here with its evidence level, method, and

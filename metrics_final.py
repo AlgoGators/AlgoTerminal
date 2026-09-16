@@ -144,8 +144,10 @@ def main() -> None:
         dd = float((eq / np.maximum.accumulate(eq) - 1).min())
         cagr = float(eq[-1] ** (252 / n) - 1) if n else np.nan
         ts = trade_stats(r, pseg.to_numpy())
-        dsr243 = deflated_sharpe(sr, seg, n, 243)
-        dsr1000 = deflated_sharpe(sr, seg, n, 1000)
+        # DSR must use PER-PERIOD (daily) Sharpe with daily skew/kurtosis
+        sr_daily = r.mean() / (r.std(ddof=1) if r.std(ddof=1) else np.nan)
+        dsr243 = deflated_sharpe(sr_daily, seg, n, 243)
+        dsr1000 = deflated_sharpe(sr_daily, seg, n, 1000)
         per[wname] = {"cagr": cagr, "sharpe": sr, "vol": vol, "sortino": sortino, "maxdd": dd,
                       "best_day": float(r.max()), "worst_day": float(r.min()), **ts,
                       "dsr243": dsr243, "dsr1000": dsr1000, "ann": ann, "t": sr * np.sqrt(n / 252)}
