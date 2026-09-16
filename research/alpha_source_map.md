@@ -16,17 +16,17 @@ Legend:
 
 | # | Source | Mechanism (captain's words) | Test oracle | Data needed | Cost | Status |
 | --- | --- | --- | --- | --- | --- | --- |
-| 1 | Winter maintenance | Refineries do maintenance in winter to prep for summer, tightening supply | Ex-ante maintenance calendar (utilization seasonal dip) as a conditioning feature, vs realized utilization | EIA WPULEUS3 (have) | cheap | UNTESTED |
-| 2 | Cold-weather vehicle demand | Colder weather makes vehicles use more gas: longer warmup, thicker fluid, air drag, tire pressure loss | Gasoline crack forward returns conditioned on cold spells in major demand centers | NASA POWER temps (wired, keyless) | cheap | UNTESTED (distinct from failed NG/HO HDD gate) |
-| 3 | Fuel blends | Summer/winter blend transition moves cracks independent of demand | Blend-switch window dummies (spring, fall) interacting with seasonal deviation | calendar only | cheap | UNTESTED |
+| 1 | Winter maintenance | Refineries do maintenance in winter to prep for summer, tightening supply | Ex-ante maintenance calendar (utilization seasonal dip) as a conditioning feature, vs realized utilization | EIA WPULEUS3 (have) | cheap | TESTED-kill-construction (batch1) |
+| 2 | Cold-weather vehicle demand | Colder weather makes vehicles use more gas: longer warmup, thicker fluid, air drag, tire pressure loss | Gasoline crack forward returns conditioned on cold spells in major demand centers | NASA POWER temps (wired, keyless) | cheap | TESTED-keep weak (batch1): gas +3.35pt fwd10, HO negative; relative tilt retained |
+| 3 | Fuel blends | Summer/winter blend transition moves cracks independent of demand | Blend-switch window dummies (spring, fall) interacting with seasonal deviation | calendar only | cheap | TESTED-keep (batch1): windows are low-edge high-vol; de-risk not add |
 | 4 | Electrical load | Electricity demand shapes run rates and margins | Load or degree-day conditioning of crack legs | NYISO/PJM load or POWER-derived | medium | UNTESTED (data feasibility first) |
 | 5 | Other products | Distillate, jet, naphtha have their own seasonal peaks | Distillate winter peak on HO crack; jet/naphtha series | HO in panel; jet/naphtha need new series | medium | UNTESTED (data constraint for jet/naphtha) |
 | 6 | Increasing demand/supply | The model must not assume flat demand and supply | Product supplied (retry other EIA routes) + stock-change demand proxy drift | EIA API | medium | UNTESTED (route retry needed) |
-| 7 | Technological change | Efficiency, EV share, refinery closures drift the norm | Norm-drift diagnostics: same-month seasonal stats 2007-2015 vs 2016-2026 | panel only | cheap | UNTESTED (diagnostic, not feature yet) |
+| 7 | Technological change | Efficiency, EV share, refinery closures drift the norm | Norm-drift diagnostics: same-month seasonal stats 2007-2015 vs 2016-2026 | panel only | cheap | ANSWERED (batch1): drift large; adaptive norm required |
 | 8 | Asymmetry mechanism | Why does the left tail revert and the right tail not | Phase 1/1R answered: tightness persists; only regime-conditional short carries info. Next: tightness-ending events (utilization pin + stock rebuild) as the short entry | EIA + panel | medium | ANSWERED-partial, CONTEXT (next: entry-time test) |
-| 9 | Multiple crushes not captured | The cross factor holds one leg, leaves concurrent crushes untraded | Phase 2 basket: hold every crushed leg at product level | panel only | cheap | UNTESTED (preregistered, unrun) |
-| 10 | Want both (all cracked legs) | Same as 9 | Same as 9 | panel only | cheap | UNTESTED (same as 9) |
-| 11 | Correlations recheck | The diversification math must be re-verified on honest returns | Re-export leg-level correlation matrix from v2 engine on corrected returns | panel only | cheap | IN_PROGRESS (factor-level numbers known: crack/cross 0.34, cross/bzwti -0.25, gas/HO ~0.11) |
+| 9 | Multiple crushes not captured | The cross factor holds one leg, leaves concurrent crushes untraded | Phase 2 basket: hold every crushed leg at product level | panel only | cheap | TESTED-kill-construction (batch1): product-level basket fails; multi-leg F2 variant open |
+| 10 | Want both (all cracked legs) | Same as 9 | Same as 9 | panel only | cheap | TESTED-kill-construction (batch1, same as 9); variant open |
+| 11 | Correlations recheck | The diversification math must be re-verified on honest returns | Re-export leg-level correlation matrix from v2 engine on corrected returns | panel only | cheap | ANSWERED (batch1): book is 2 bets; bzwti is the diversifier |
 | 12 | Brent-WTI composition and efficiencies | Different grade composition, different processing efficiencies | Spread conditioned on storage plus refining-complex proxies; quality differentials via price-implied variables | EIA storage (have); quality series constrained | low-medium | UNTESTED (composition part constrained) |
 
 ## Workflow
