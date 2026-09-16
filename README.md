@@ -28,7 +28,8 @@ gaps found in the v1 review:
 | Phase | Cost | Status |
 | --- | --- | --- |
 | 0 Scaffolding | trivial | done (commit 5558b0e) |
-| 1 Side structure | cheap | done (findings/phase1_findings.md) |
+| 1 Side structure | done (mirror test) | findings/phase1_findings.md |
+| 1R Side structure (mechanism-based) | done | findings/phase1r_findings.md |
 | 2 Basket + depth | medium | preregistered |
 | 3 Flow modeling | medium | preregistered |
 | 4 Representation | expensive | preregistered |
