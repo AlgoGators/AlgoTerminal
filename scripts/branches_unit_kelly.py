@@ -77,6 +77,33 @@ def fit_curve(fit, zv, fw_n, rarr):
     return curve, sd, nn, tval, maxc
 
 
+def hard_crossing(fit, zcut, zv, rarr, fw_n, lvl_n, lo=-0.45, hi=0.10, nb=36):
+    """Data-derived hard stop: drawdown depth where conditional 20d forward
+    edge turns negative (mean - 1.645*SE <= 0). No crossing -> no hard stop."""
+    entries = np.flatnonzero(fit & rarr & (zv <= zcut) & np.isfinite(fw_n))
+    ds, fs = [], []
+    for i in entries[:3000]:
+        j = min(i + 20, len(lvl_n) - 1)
+        for k in range(i, j):
+            d = (lvl_n[k] - lvl_n[i]) / max(abs(lvl_n[i]), 1e-9)
+            if lo <= d <= hi and np.isfinite(fw_n[k]):
+                ds.append(d)
+                fs.append(fw_n[k])
+    if len(ds) < 50:
+        return 1.0
+    ds = np.array(ds)
+    fs = np.array(fs)
+    edges = np.linspace(lo, hi, nb)
+    for b in range(nb - 1):
+        m = (ds >= edges[b]) & (ds < edges[b + 1])
+        if m.sum() >= 10:
+            mean = fs[m].mean()
+            se = fs[m].std(ddof=1) / np.sqrt(m.sum())
+            if mean - 1.645 * se <= 0:
+                return float(np.clip(-edges[b], 0.02, 1.0))
+    return 1.0
+
+
 def run(mode: str, ctrl: dict):
     df = pd.read_parquet(ROOT / "engine" / "panel_v2.parquet").sort_index()
     levels = dc.fb.build_levels(df)
@@ -167,9 +194,9 @@ def run(mode: str, ctrl: dict):
             if j - i >= 5 and fw_n[i] > 0 and base_n[i] and np.isfinite(base_n[i]):
                 maes.append(float((seg[0] - seg.min()) / max(base_n[i], 1e-9)))
         trail = float(np.percentile(maes, 100 * tp)) if len(maes) > 5 else 0.03
-        hard = min(0.10 / scale, 1.0)
+        hard = hard_crossing(fit, zcut, zv, rarr, fw_n, lvl_n)
         diaries.append({"y": y, "zcut": round(zcut, 3), "scale": round(scale, 4),
-                        "cb": round(cb, 4), "trail": round(trail, 4)})
+                        "cb": round(cb, 4), "trail": round(trail, 4), "hard": round(hard, 4)})
         raw = (pd.Series(w, index=full_idx) * relnorm * scale).fillna(0.0)
         pos = dc.derived_risk(raw, lvl, base, cb, hard, trail, cool).clip(-scale, scale).fillna(0.0)
         epos = pos[emask]
