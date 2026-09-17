@@ -78,8 +78,10 @@ def fit_curve(fit, zv, fw_n, rarr):
 
 
 def hard_crossing(fit, zcut, zv, rarr, fw_n, lvl_n, lo=-0.45, hi=0.10, nb=36):
-    """Data-derived hard stop: drawdown depth where conditional 20d forward
-    edge turns negative (mean - 1.645*SE <= 0). No crossing -> no hard stop."""
+    """Tail-dominance hard stop: stop at the drawdown depth where the
+    downside tail (5th pct of continuation returns) exceeds the expected
+    recovery (mean). Stops when staying in no longer pays for its tail; no
+    crossing -> data says the tail never dominates -> no hard stop."""
     entries = np.flatnonzero(fit & rarr & (zv <= zcut) & np.isfinite(fw_n))
     ds, fs = [], []
     for i in entries[:3000]:
@@ -97,9 +99,10 @@ def hard_crossing(fit, zcut, zv, rarr, fw_n, lvl_n, lo=-0.45, hi=0.10, nb=36):
     for b in range(nb - 1):
         m = (ds >= edges[b]) & (ds < edges[b + 1])
         if m.sum() >= 10:
-            mean = fs[m].mean()
-            se = fs[m].std(ddof=1) / np.sqrt(m.sum())
-            if mean - 1.645 * se <= 0:
+            f = fs[m]
+            mean = f.mean()
+            p5 = np.percentile(f, 5)
+            if abs(p5) >= mean and mean < 0.10:
                 return float(np.clip(-edges[b], 0.02, 1.0))
     return 1.0
 
@@ -257,13 +260,20 @@ def report(ret_full, pos_full, tag):
 def main() -> None:
     best = json.loads((ROOT / "results" / "sweep_big_best.json").read_text())[0]
     print("Frozen controls from TRAIN sweep:", best, flush=True)
+    # tail-stop makes cooldown matter: re-test the honest cooldown
+    # dimension with stops actually firing.
+    cool_values = [0, 3, 5, 7]
     out = {}
     for mode in ("anchor", "unit", "kelly", "kelly_half"):
-        ret, pos, diag = run(mode, best)
-        pd.DataFrame({"date": ret.index, "ret": ret.to_numpy(), "pos": pos.to_numpy()}).to_csv(
-            ROOT / "results" / f"branch_{mode}_series.csv", index=False)
-        pd.DataFrame(diag).to_csv(ROOT / "results" / f"branch_{mode}_diary.csv", index=False)
-        out[mode] = report(ret, pos, mode)
+        for coolv in cool_values:
+            ctrl = dict(best)
+            ctrl["cool"] = coolv
+            tag = f"{mode:11s} cool={coolv}"
+            ret, pos, diag = run(mode, ctrl)
+            pd.DataFrame({"date": ret.index, "ret": ret.to_numpy(), "pos": pos.to_numpy()}).to_csv(
+                ROOT / "results" / f"branch_{mode}_cool{coolv}_series.csv", index=False)
+            pd.DataFrame(diag).to_csv(ROOT / "results" / f"branch_{mode}_cool{coolv}_diary.csv", index=False)
+            out[tag] = report(ret, pos, tag)
     print("\nSaved results/branch_{anchor,unit,kelly,kelly_half}_series.csv + diaries")
 
 
