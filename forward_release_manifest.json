@@ -1,0 +1,88 @@
+{
+  "calendar": {
+    "missing_data_policy": "flatten",
+    "session_labels": "panel index",
+    "timezone": "UTC"
+  },
+  "created_utc": "2026-09-15T20:36:03.160103Z",
+  "execution": {
+    "adjustment": "continuous panel as supplied",
+    "currency": "USD",
+    "price_field": "Close",
+    "starting_equity": 1.0
+  },
+  "files": {
+    "/home/sebas/algoterminal-strategy-audit/book_oos_v4.py": {
+      "bytes": 16149,
+      "sha256": "8a1df6d1839082c83741dcb6f7ce18a54908a51fc734ce7fc6e0e5c3f854990f"
+    },
+    "/home/sebas/algoterminal-strategy-audit/engine_v2.py": {
+      "bytes": 30466,
+      "sha256": "3f2a3bcb7df38c382c4441455a8b86be49b0c3bb61460a9aba702bc8a7a2d29e"
+    },
+    "/home/sebas/algoterminal-strategy-audit/factor_book.py": {
+      "bytes": 12800,
+      "sha256": "52ad7d938ac551fce639bc3ce53747b389ddf6cc331f1ee985d2b444ae832910"
+    },
+    "/home/sebas/algoterminal-strategy-audit/forward_test.py": {
+      "bytes": 21208,
+      "sha256": "386a401794b60ac7263be3d96399e855e99f2e8bd56d44da5e2a592da1daab1d"
+    },
+    "/home/sebas/algoterminal-strategy-audit/panel_v2.parquet": {
+      "bytes": 188425,
+      "sha256": "e667d0ef71f4367b321b43eeaa007834ddecfc4a51611cc1cfeef13ec8a61a2b"
+    },
+    "/home/sebas/algoterminal-strategy-audit/research/forward_test_protocol.md": {
+      "bytes": 8649,
+      "sha256": "d64fb6435e2b6c56560e600b6b1209dc8f4e25351b8dbcc4fcb45dc0c7345df1"
+    }
+  },
+  "instrument_map": {
+    "BZ": "BZ=F",
+    "CL": "CL=F",
+    "HO": "HO=F",
+    "NG": "NG=F",
+    "RB": "RB=F"
+  },
+  "os": {
+    "machine": "x86_64",
+    "release": "6.18.33.2-microsoft-standard-WSL2",
+    "system": "Linux"
+  },
+  "packages": {
+    "numpy": "2.5.2",
+    "pandas": "3.0.5",
+    "pyarrow": "25.0.1",
+    "pytest": "9.1.1"
+  },
+  "panel_path": "/home/sebas/algoterminal-strategy-audit/panel_v2.parquet",
+  "parameters": {
+    "cooldown_sessions": 5,
+    "daily_circuit_breaker_sigma": 3.0,
+    "factor_weights": {
+      "bzwti": 0.3333333333333333,
+      "crack_321": 0.3333333333333333,
+      "cross_sectional": 0.3333333333333333
+    },
+    "factors": [
+      "crack_321",
+      "cross_sectional",
+      "bzwti"
+    ],
+    "gap_cap": null,
+    "hard_stop_pct": 0.2,
+    "max_factor_leverage": 1.0,
+    "overlay_cut_drawdown": -0.06,
+    "overlay_halt_drawdown": -0.1,
+    "roll_bps_annual": 20.0,
+    "seasonal_z_lookback": 90,
+    "trade_bps": 5.0,
+    "volatility_lookback": 20,
+    "volatility_target": 0.1
+  },
+  "python": "3.12.3 (main, Aug 31 2026, 10:18:26) [GCC 13.3.0]",
+  "python_executable": "/home/sebas/.local/bin/python",
+  "raw_responses": [],
+  "release_id": "core3-v2-forward-20260915",
+  "schema": "frozen-forward-test/v1"
+}

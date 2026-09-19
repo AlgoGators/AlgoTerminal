@@ -238,13 +238,17 @@ def leg_risk(pos: pd.Series, level: pd.Series, trailing_stop: bool) -> pd.Series
     cb_hit = (prev_held * sigma_move) <= -DAILY_LOSS_SIGMA
     entry_level = np.full(len(arr), np.nan)
     cur_entry = np.nan
+    cur_sign = 0.0
     for i in range(len(arr)):
-        if arr[i]>0 and np.isnan(cur_entry):
-            cur_entry=s[i]
-        elif arr[i]==0:
-            cur_entry=np.nan
-        entry_level[i]=cur_entry
-    hard_hit = (arr>0)&(s<entry_level*(1-HARD_STOP_PCT))
+        sign = np.sign(arr[i])
+        if sign != 0.0 and (np.isnan(cur_entry) or sign != cur_sign):
+            cur_entry = s[i]
+            cur_sign = sign
+        elif sign == 0.0:
+            cur_entry = np.nan
+            cur_sign = 0.0
+        entry_level[i] = cur_entry
+    hard_hit = ((arr > 0) & (s < entry_level * (1 - HARD_STOP_PCT))) | ((arr < 0) & (s > entry_level * (1 + HARD_STOP_PCT)))
     event = np.asarray(stop_hit|cb_hit|hard_hit, dtype=bool)
     arr[event]=0.0
     n=len(arr)
@@ -386,14 +390,25 @@ def roll_proxy_series(df: pd.DataFrame, levels: dict) -> dict[str, pd.Series]:
         proxy[fac]= y.fillna(0.0)
     return proxy
 
+def causal_high_vol_mask(front: pd.Series, lookback: int = 20, quantile: float = 0.75,
+                         min_periods: int = 10) -> pd.Series:
+    """Mark days whose prior-day volatility exceeds its prior history quantile."""
+    rv = front.pct_change().rolling(lookback, min_periods=min_periods).std().shift(1)
+    threshold = rv.expanding(min_periods=min_periods).quantile(quantile)
+    return rv.gt(threshold).fillna(False)
+
+
+def select_primary_stream(net_stub: pd.DataFrame, net_proxy: pd.DataFrame,
+                          use_proxy: bool) -> pd.DataFrame:
+    return net_proxy if use_proxy else net_stub
+
+
 def apply_costs(positions, returns, turnover=None, trade_bps=TRADE_BPS, roll_bps=ROLL_BPS, use_proxy=False, df=None, levels=None, stress_double=False):
     out={}
     # stress flag: high vol days double cost
     stress={}
     if stress_double and df is not None:
-        rv = df.CL.pct_change().rolling(20,min_periods=10).std().shift(1)
-        thresh = rv.quantile(0.75)
-        hi = rv > thresh
+        hi = causal_high_vol_mask(df.CL)
         for name in returns:
             stress[name]=hi.reindex(returns[name].index).fillna(False)
     else:
@@ -466,22 +481,23 @@ def run_engine(panel_path=None, trade_bps=TRADE_BPS, roll_bps=ROLL_BPS, cap3sig=
     net_stub=apply_costs(factors,rets,turnover=turn,trade_bps=trade_bps,roll_bps=roll_bps,use_proxy=False,df=df,levels=levels,stress_double=False)
     # always compute proxy for comparison
     net_proxy_all=apply_costs(factors,rets,turnover=turn,trade_bps=trade_bps,roll_bps=roll_bps,use_proxy=True,df=df,levels=levels,stress_double=False)
-    net_proxy=net_proxy_all if use_proxy else net_proxy_all
+    net_proxy=net_proxy_all
     net_stress=apply_costs(factors,rets,turnover=turn,trade_bps=trade_bps,roll_bps=roll_bps,use_proxy=False,df=df,levels=levels,stress_double=True)
     # gap cap variants for comparison
     f2g, r2g, t2g = build_v2(levels, cap3sig=0.05)
     net_cap5=apply_costs(f2g,r2g,turnover=t2g,trade_bps=trade_bps,roll_bps=roll_bps,use_proxy=False,df=df,levels=levels,stress_double=False)
     f2h, r2h, t2h = build_v2(levels, cap3sig=0.08)
     net_cap8=apply_costs(f2h,r2h,turnover=t2h,trade_bps=trade_bps,roll_bps=roll_bps,use_proxy=False,df=df,levels=levels,stress_double=False)
-    net = net_stub  # default report uses stub
+    net = select_primary_stream(net_stub, net_proxy, use_proxy)
+    primary_label = "proxy" if use_proxy else "stub"
     isw=window(net,IS_START,df.index.max())
     oos=window(net,OOS_START,IS_START)
     if verbose:
         print(f"Engine v2 window {df.index.min().date()}->{df.index.max().date()} rows={len(df)} warmup={WARMUP}")
-        print(f" costs baseline {trade_bps}bps trade / {roll_bps}bps/yr roll (stub), stress_double={stress_double} proxy={use_proxy}")
+        print(f" costs baseline {trade_bps}bps trade / {roll_bps}bps/yr roll ({primary_label}), stress_double={stress_double} proxy={use_proxy}")
         if use_proxy:
             print(" roll proxy: front 21d slope *0.4, contango bleed / backwardation earn")
-        print("\nPer-factor (net stub, NOCAP) IS vs OOS:")
+        print(f"\nPer-factor (net {primary_label}, NOCAP) IS vs OOS:")
         print("  %-16s | %6s %6s %7s | %6s %6s %7s %6s %6s" % ("factor","IS_Sh","IS_DD","IS_wst","OOS_Sh","OOS_DD","OOS_wst","OOS_vol","daysOn"))
         for f in net.columns:
             si,so=stats(isw[f]),stats(oos[f])
@@ -505,9 +521,9 @@ def run_engine(panel_path=None, trade_bps=TRADE_BPS, roll_bps=ROLL_BPS, cap3sig=
                     tb,rb,s["sharpe"],s["cagr"]*100,s["maxdd"]*100,s["vol"]*100,s["worst"]*100))
         # stress double
         w=weight_scheme(isw[core],"EQ")
-        b_stub=book_returns(oos,core,w)
+        b_stub=book_returns(window(net_stub,OOS_START,IS_START),core,w)
         b_stress=book_returns(window(net_stress,OOS_START,IS_START),core,w)
-        print("\nStress-widened cost (double 5bps on high-vol days): OOS CORE3 EQ")
+        print("\nStress-widened cost (double 5bps on causal high-vol days): OOS CORE3 EQ")
         for label, b in [("stub 5bps", b_stub), ("stress x2", b_stress)]:
             s=stats(b)
             print("  %-10s Sharpe %5.2f CAGR %6.2f%% MaxDD %6.1f%% worst %5.2f%%"%(label,s["sharpe"],s["cagr"]*100,s["maxdd"]*100,s["worst"]*100))
@@ -551,11 +567,11 @@ def run_engine(panel_path=None, trade_bps=TRADE_BPS, roll_bps=ROLL_BPS, cap3sig=
         w=weight_scheme(isw[core],"EQ")
         b_core=book_returns(oos,core,w)
         sb=stats(b_core)
-        print(f"\nBook CORE3 EQ (IS-frozen EQ, no overlay, stub) OOS: Sharpe {sb['sharpe']:.2f} CAGR {sb['cagr']*100:.2f}% MaxDD {sb['maxdd']*100:.1f}% vol {sb['vol']*100:.1f}% worst {sb['worst']*100:.2f}%")
+        print(f"\nBook CORE3 EQ (IS-frozen EQ, no overlay, {primary_label}) OOS: Sharpe {sb['sharpe']:.2f} CAGR {sb['cagr']*100:.2f}% MaxDD {sb['maxdd']*100:.1f}% vol {sb['vol']*100:.1f}% worst {sb['worst']*100:.2f}%")
         print(" Comparable to book_oos_v4 baseline: CORE3 EQ raw OOS Sharpe 0.71 CAGR 11.1% MaxDD -29.8% vol 16.6% (v4)")
         print(" Engine v2 delta is cost basis + roll handling; should be within 0.05 Sharpe if honest.")
         # yearly
-        print("\nYearly OOS CORE3 EQ (stub):")
+        print(f"\nYearly OOS CORE3 EQ ({primary_label}):")
         yr=b_core.groupby(b_core.index.year).apply(lambda x: (np.prod(1+x)-1)*100)
         for y,v in yr.items():
             print(f"  {y} {v:+6.1f}%")
@@ -587,11 +603,12 @@ def main():
         run_engine(panel_path=args.panel, trade_bps=args.trade_bps, roll_bps=args.roll_bps, use_proxy=args.proxy_roll, stress_double=args.stress_double)
         # also write results csv
         df, levels, factors, rets, turn, net_stub, net_proxy, net_stress = run_engine(panel_path=args.panel, trade_bps=args.trade_bps, roll_bps=args.roll_bps, use_proxy=args.proxy_roll, stress_double=args.stress_double, verbose=False)
-        # build results table
-        isw=window(net_stub,IS_START,df.index.max())
-        oos=window(net_stub,OOS_START,IS_START)
+        # build results table from the selected primary stream
+        net_primary = select_primary_stream(net_stub, net_proxy, args.proxy_roll)
+        isw=window(net_primary,IS_START,df.index.max())
+        oos=window(net_primary,OOS_START,IS_START)
         rows=[]
-        for f in net_stub.columns:
+        for f in net_primary.columns:
             si,so=stats(isw[f]),stats(oos[f])
             rows.append({"factor":f,"IS_sharpe":si["sharpe"],"IS_cagr":si["cagr"],"IS_maxdd":si["maxdd"],"IS_worst":si["worst"],"IS_vol":si["vol"],
                          "OOS_sharpe":so["sharpe"],"OOS_cagr":so["cagr"],"OOS_maxdd":so["maxdd"],"OOS_worst":so["worst"],"OOS_vol":so["vol"]})

@@ -130,7 +130,7 @@ for cap in caps:
     else:
         lbl=f"CAP{int(cap*100)}"
         f2,_ ,_,_ = b5.build_v5(levels,cap,False)
-    net2=b5.apply_costs(f2, {k: f2[k].shift(1).fillna(0.0)*levels[k].diff()/b5.base_of(levels[k]).shift(1).replace(0.0,np.nan) if k in levels else pd.Series(0,index=f2[k].index) for k in f2}, turnover={k:f2[k].diff().abs() for k in f2})
+    net2=b5.apply_costs(f2, {k: f2[k].shift(1).fillna(0.0)*levels[k].diff()/b5.b4.base_of(levels[k]).shift(1).replace(0.0,np.nan) if k in levels else pd.Series(0,index=f2[k].index) for k in f2}, turnover={k:f2[k].diff().abs() for k in f2})
     # actually use b5 rets
     # simplify: use raw_book from net2? skip detailed, just report worst
     w2=b5.weight_scheme(net2.loc[IS_START:].iloc[WARMUP:][["crack_321","cross_sectional","bzwti"]],"EQ")

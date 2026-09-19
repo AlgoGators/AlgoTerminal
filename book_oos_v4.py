@@ -30,8 +30,16 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-DEV = Path("/home/sebas/algoterminal-strategy-dev")
-PANEL = Path("/tmp/panel_adj_2007_2026.parquet")
+DEV = Path(__file__).parent
+TEMP_PANEL = Path("/tmp/panel_adj_2007_2026.parquet")
+DURABLE_PANEL = DEV / "panel_v2.parquet"
+
+
+def resolve_panel_path(temp_panel: Path = TEMP_PANEL, durable_panel: Path = DURABLE_PANEL) -> Path:
+    return temp_panel if temp_panel.exists() else durable_panel
+
+
+PANEL = resolve_panel_path()
 IS_START = pd.Timestamp("2023-09-08")
 OOS_START = pd.Timestamp("2007-07-30")
 WARMUP = 90
@@ -95,13 +103,17 @@ def leg_risk(pos: pd.Series, level: pd.Series, trailing_stop: bool) -> pd.Series
     cb_hit = (prev_held * sigma_move) <= -fb.DAILY_LOSS_SIGMA
     entry_level = np.full(len(arr), np.nan)
     cur_entry = np.nan
+    cur_sign = 0.0
     for i in range(len(arr)):
-        if arr[i] > 0.0 and np.isnan(cur_entry):
+        sign = np.sign(arr[i])
+        if sign != 0.0 and (np.isnan(cur_entry) or sign != cur_sign):
             cur_entry = s[i]
-        elif arr[i] == 0.0:
+            cur_sign = sign
+        elif sign == 0.0:
             cur_entry = np.nan
+            cur_sign = 0.0
         entry_level[i] = cur_entry
-    hard_hit = (arr > 0.0) & (s < entry_level * (1.0 - fb.HARD_STOP_PCT))
+    hard_hit = ((arr > 0.0) & (s < entry_level * (1.0 - fb.HARD_STOP_PCT))) | ((arr < 0.0) & (s > entry_level * (1.0 + fb.HARD_STOP_PCT)))
     event = np.asarray(stop_hit | cb_hit | hard_hit, dtype=bool)
     arr[event] = 0.0
     n = len(arr)
@@ -157,6 +169,7 @@ def f2_per_leg(levels, vt: float, cap3sig: float | None):
 def build_v4(levels, cap3sig: float | None, vt_f2: float = 0.50):
     """Corrected engine for the 4 non-F2 factors (single-leg, basis fixed) + per-leg F2."""
     fb.vol_scale = fixed_vol_scale
+    fb.apply_leg_risk = leg_risk
     factors = {}
     factors.update(fb.f1_positions(levels))
     factors.update(fb.f3_positions(levels))

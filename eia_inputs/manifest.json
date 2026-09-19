@@ -1,0 +1,70 @@
+{
+  "retrieval": [
+    {
+      "series": "WGTSTUS1",
+      "file": "eia_inputs/WGTSTUS1.csv",
+      "endpoint": "https://api.eia.gov/v2/petroleum/stoc/wstk/data/",
+      "query": {
+        "frequency": "weekly",
+        "data[0]": "value",
+        "facets[series][0]": "WGTSTUS1",
+        "start": "2007-01-01",
+        "end": "2026-09-09",
+        "sort[0][column]": "period",
+        "sort[0][direction]": "asc",
+        "offset": "0",
+        "length": "5000"
+      },
+      "retrieved_at": "2026-09-15T20:19:42+00:00",
+      "rows": 1027,
+      "first_period": "2007-01-05",
+      "last_period": "2026-09-04",
+      "units": "MBBL",
+      "api": "EIA Open Data API v2"
+    },
+    {
+      "series": "WDISTUS1",
+      "file": "eia_inputs/WDISTUS1.csv",
+      "endpoint": "https://api.eia.gov/v2/petroleum/stoc/wstk/data/",
+      "query": {
+        "frequency": "weekly",
+        "data[0]": "value",
+        "facets[series][0]": "WDISTUS1",
+        "start": "2007-01-01",
+        "end": "2026-09-09",
+        "sort[0][column]": "period",
+        "sort[0][direction]": "asc",
+        "offset": "0",
+        "length": "5000"
+      },
+      "retrieved_at": "2026-09-15T20:19:42+00:00",
+      "rows": 1027,
+      "first_period": "2007-01-05",
+      "last_period": "2026-09-04",
+      "units": "MBBL",
+      "api": "EIA Open Data API v2"
+    },
+    {
+      "series": "WPULEUS3",
+      "file": "eia_inputs/WPULEUS3.csv",
+      "endpoint": "https://api.eia.gov/v2/petroleum/pnp/wiup/data/",
+      "query": {
+        "frequency": "weekly",
+        "data[0]": "value",
+        "facets[series][0]": "WPULEUS3",
+        "start": "2007-01-01",
+        "end": "2026-09-09",
+        "sort[0][column]": "period",
+        "sort[0][direction]": "asc",
+        "offset": "0",
+        "length": "5000"
+      },
+      "retrieved_at": "2026-09-15T20:19:42+00:00",
+      "rows": 1027,
+      "first_period": "2007-01-05",
+      "last_period": "2026-09-04",
+      "units": "%",
+      "api": "EIA Open Data API v2"
+    }
+  ]
+}
