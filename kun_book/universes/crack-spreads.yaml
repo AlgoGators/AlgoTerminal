@@ -1,0 +1,11 @@
+name: crack-spreads
+asset_class: custom
+symbols:
+- CRACK321
+- CRACKGAS
+- CRACKHO
+- BZWTI
+description: "Refining-margin crack spreads and the Brent-WTI crude basis, computed\
+  \ from CL/RB/HO/BZ futures closes \u2014 synthetic levels, not directly tradable\
+  \ tickers"
+source: derived

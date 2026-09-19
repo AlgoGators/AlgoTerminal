@@ -1,0 +1,11 @@
+title: WTI Crack Spread Book
+legs:
+- wti-crack-spread-seasonal-mean-reversion
+- wti-gasoline-crack-spread-seasonal-mean-reversion
+- wti-heating-oil-crack-spread-seasonal-mean-reversion
+thesis: Combine the three crack legs (WTI 3:2:1, gasoline, heating oil) for genuinely
+  independent seasonal-reversion trade opportunities and lower portfolio-level drawdown
+  via diversification.
+weighting: inverse_vol
+author: ''
+created_at: '2026-09-10T14:50:15.942493+00:00'

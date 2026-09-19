@@ -1,0 +1,62 @@
+title: WTI Crack Spread Seasonal Mean Reversion
+thesis: 'When the WTI 3:2:1 crack spread (refining margin) is seasonally crushed below
+  its normal level for the time of year, refiners cut runs and shift yields, forcing
+  the margin to revert toward its seasonal mean -- provided the seasonal norm itself
+  is stable, not itself sliding (see risk notes). Directionally real (genuine calendar
+  seasonality in crack spreads), but see risk notes: the median trade closes too fast
+  for the refiner-run-cut mechanism to plausibly be what''s actually driving it.'
+universe: crack-spreads
+symbols:
+- CRACK321
+- CRACKGAS
+- CRACKHO
+- BZWTI
+expected_edge: 'Seasonal deseasonalized z-score reversion: go long when >0.75 sigma
+  below the 90-day seasonal-adjusted mean, exit at -0.5 sigma. New entries and stop-resumptions
+  additionally require the seasonal anchor''s own YoY trend to not be more than 0.5
+  sigma below its own historical norm (self-scaled per instrument). Vol-targeted sizing
+  plus a circuit breaker, sigma-based hard stop, and trailing stop.'
+asset_class: custom
+risk_notes: 'Anchor-trend gate changed from a fixed $2/bbl YoY threshold to a self-scaled
+  z-score (ANCHOR_TREND_Z_MIN=-0.5 sigma against the trend''s own expanding history):
+  the flat dollar threshold was tuned on CRACK321 and reused unchanged on CRACKGAS/CRACKHO
+  despite their anchor-trend volatility being 0.7x/1.9x CRACK321''s on this 5y sample
+  -- CRACKHO''s standalone max drawdown improved from -53.6% to -28.9% under the corrected,
+  self-scaled threshold; CRACK321 to -11.0% (Sharpe 1.10 -> 1.41). Still in-sample-derived
+  (the z-threshold of -0.5 sigma, like the original, is picked to work on this exact
+  sample), but it''s now at least dimensionally consistent across legs rather than
+  one leg''s dollar-scale magic number applied to all three. P&L normalization (engine-level,
+  affects any `source: derived` hypothesis): the level-diff return used a single fixed
+  anchor (the series'' first value) to avoid pct_change''s instability near zero --
+  but pinning to day 1 of the backtest window made ''1.0x position'' represent a different
+  real $ exposure purely depending on when the backtest happened to start. Now a slowly-adapting
+  rolling reference (252-day trailing mean of the level''s magnitude, expanding during
+  warmup) -- still avoids dividing by a fast-moving near-zero denominator, no longer
+  arbitrarily anchored to one day''s price. Cost-adjusted at 10bps of turnover per
+  unit position change (engine''s new cost_bps parameter) -- a conservative, ILLUSTRATIVE
+  estimate for a liquid 2-3-leg NYMEX futures spread (WTI/RBOB/heating oil are all
+  liquid), not a verified execution model: it doesn''t account for per-leg lot-size/ratio
+  mismatches, legging risk, or roll costs across three separate futures curves with
+  different roll calendars. Sensitivity checked at 0/5/10/25bps -- CRACK321 Sharpe
+  1.41 -> 1.37 -> 1.30 over that range, i.e. the result isn''t a knife-edge artifact
+  of assuming zero costs, but real costs for an actual 3-leg spread implementation
+  could plausibly exceed the top of that range and this hasn''t been independently
+  verified. Structural gap, not fixed here: CRACK321/CRACKGAS/CRACKHO are synthetic
+  levels (see universe description), not tradable instruments -- a real position is
+  2-3 separate futures legs with different contract sizes and roll calendars, legging
+  risk on entry/exit, and real (if reduced) spread margin. cost_bps above is a rough
+  turnover cost estimate, not a model of any of that. Thesis correction: the written
+  thesis says ''refiners cut runs, forcing reversion'' -- checked against this book''s
+  own trades, median holding period is ~6 calendar days (mean 7.3, 75th pct 10 days).
+  Refinery utilization/turnaround decisions run on a weeks-to-months lead time, not
+  days, so that mechanism cannot plausibly be what''s closing out the typical trade.
+  The more likely operative edge for the median (fast) trade is statistical/flow-driven
+  mean reversion in the spread itself (order-flow imbalance, relative-value desks
+  trading the spread back toward normal) -- a real but different and less structurally
+  durable edge than the one written down. The refiner-response mechanism is more plausible
+  for the minority of trades held 2-4+ weeks. Treat the seasonal-crush thesis as directionally
+  real (crack spreads do have genuine calendar seasonality from RVP/blend-spec and
+  demand-cycle effects) but not confirmed as the mechanism for most individual trades.'
+author: ''
+created_at: '2026-09-10T14:34:50.160482+00:00'
+source: derived
