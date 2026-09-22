@@ -30,6 +30,20 @@ Run `python scripts/gates.py` before any claim. Hard gates must pass.
 5. **Negative control.** Every result must fail on a shuffled or shifted
    control. If the shuffled version performs the same, the result is an
    artifact of the construction.
+6. **Metric basis.** Every quoted series declares what it is a return ON, in
+   `scripts/basis.py`. The current basis: a percentage change of the crack
+   spread over a rolling mean of its absolute value, per unit of 1000 bbl
+   notional, with no margin, no leverage and no capital base. It is not a
+   return on capital, and any figure quoted without its basis is a failure.
+7. **Pre-registration.** An experiment script calls `prereg.require(name)` and
+   refuses to run without `research/prereg/<name>.md` containing a hypothesis,
+   evaluation window, kill rule, cost basis and decision rule. This is the
+   only defence against searching the evaluation window.
+8. **Evaluation-window burn register.** `scripts/burn.py` records every read of
+   the historical window and states that the window is fully spent. A claim is
+   certifiable only from forward sessions on or after 2026-10-01, once there
+   are at least 250 of them with a positive net. Until then the honest answer
+   to "is it profitable" is not yet determined.
 
 `python scripts/gates.py --self-test` proves the gates bite, by running them
 against a known non-causal transform and the known-contaminated panel.

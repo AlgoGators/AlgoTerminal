@@ -156,6 +156,10 @@ def cost_sensitivity(series: dict, levels=(5, 10, 16, 24, 40)) -> None:
 
 
 def main() -> None:
+    import sys as _sys
+    _sys.path.insert(0, str(ROOT / "scripts"))
+    import basis
+    print(basis.header() + "\n")
     series = {
         "FIXED controls / futures (quoted)": "walkforward_series.csv",
         "CAUSAL re-derived / futures (quoted)": "walkforward_causal_series.csv",

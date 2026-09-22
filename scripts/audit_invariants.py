@@ -113,6 +113,21 @@ def main() -> int:
     _finds = gates.artifact_scan(_lvl)
     check("data artifact gate (roll-free panel)", not _finds, f"findings: {_finds}")
 
+    print("7. metric basis")
+    _b = _ilu.spec_from_file_location("basis", ROOT / "scripts" / "basis.py")
+    basis = _ilu.module_from_spec(_b)
+    _b.loader.exec_module(basis)
+    _missing = basis.uncovered()
+    check("every quoted series has a basis entry", not _missing, f"missing: {_missing}")
+
+    print("8. pre-registration")
+    _p = _ilu.spec_from_file_location("prereg", ROOT / "scripts" / "prereg.py")
+    prereg = _ilu.module_from_spec(_p)
+    _p.loader.exec_module(prereg)
+    _names = [q.stem for q in sorted((ROOT / "research" / "prereg").glob("*.md"))]
+    _probs = [x for n in _names for x in prereg.check(n)] if _names else ["no registrations"]
+    check("experiments are pre-registered", not _probs, f"{_probs}")
+
     print()
     if FAILURES:
         print(f"FAILED ({len(FAILURES)}):")

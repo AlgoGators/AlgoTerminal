@@ -154,6 +154,45 @@ def cost_gate(series_csv: Path, base_bps: float = 5.0) -> tuple[bool, list[str]]
     return ok, lines
 
 
+# ---------------------------------------------------------------- gates 6-8
+
+def basis_gate() -> tuple[bool, list[str]]:
+    import basis
+    missing = basis.uncovered()
+    lines = [f"    [{'ok' if not missing else 'FAIL'}] every quoted series has a basis entry"]
+    for m in missing:
+        lines.append(f"      no basis declared for {m}")
+    return (not missing), lines
+
+
+def prereg_gate() -> tuple[bool, list[str]]:
+    import prereg
+    problems: list[str] = []
+    names = [p.stem for p in sorted((ROOT / "research" / "prereg").glob("*.md"))]
+    if not names:
+        problems.append("no preregistration files exist")
+    for n in names:
+        problems += prereg.check(n)
+    # the experiment scripts must actually enforce it
+    for script, key in (("walkforward.py", "walkforward"),
+                        ("walkforward_causal.py", "walkforward_causal")):
+        text = (ROOT / "scripts" / script).read_text()
+        if f'prereg.require("{key}")' not in text:
+            problems.append(f"{script} does not call prereg.require('{key}')")
+    lines = [f"    [{'ok' if not problems else 'FAIL'}] {len(names)} experiment(s) registered and enforced"]
+    for p in problems:
+        lines.append(f"      {p}")
+    return (not problems), lines
+
+
+def burn_check() -> tuple[bool, list[str]]:
+    import burn
+    ok, why = burn.claim_allowed()
+    return ok, [f"    historical-window reads recorded: {burn.reads()}",
+                f"    forward sessions: {burn.forward_sessions()}",
+                f"    claim allowed: {ok} :: {why}"]
+
+
 # ---------------------------------------------------------------- self test
 
 def self_test(dc) -> int:
@@ -239,9 +278,25 @@ def main(argv: list[str] | None = None) -> int:
         ok_k = False
         print(f"    [FAIL] missing {primary.name}; run walkforward_causal.py first")
 
-    hard = ok_c and ok_a
+    print("\nGate 6 metric basis")
+    ok_b, lines = basis_gate()
+    print("\n".join(lines))
+    print(f"  -> {'PASS' if ok_b else 'FAIL'}")
+
+    print("\nGate 7 pre-registration")
+    ok_p, lines = prereg_gate()
+    print("\n".join(lines))
+    print(f"  -> {'PASS' if ok_p else 'FAIL'}")
+
+    print("\nGate 8 evaluation-window burn register (advisory)")
+    ok_x, lines = burn_check()
+    print("\n".join(lines))
+    print(f"  -> {'claim allowed' if ok_x else 'no claim certifiable yet'}")
+
+    hard = ok_c and ok_a and ok_b and ok_p
     print(f"\nhard gates: {'PASS' if hard else 'FAIL'}"
-          f"   advisory cost gate: {'PASS' if ok_k else 'FAIL'}")
+          f"   advisory cost gate: {'PASS' if ok_k else 'FAIL'}"
+          f"   forward evidence: {'yes' if ok_x else 'not yet'}")
     return 0 if hard else 1
 
 

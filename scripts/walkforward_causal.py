@@ -27,6 +27,12 @@ from scipy import stats as sps
 ROOT = Path("/home/sebas/algoterminal-strategy-v2")
 PANEL = Path(os.environ.get("PANEL", ROOT / "engine" / "panel_v2.parquet"))
 PANEL_TAG = os.environ.get("PANEL_TAG", "walkforward_causal")
+
+import sys as _sys  # noqa: E402
+
+_sys.path.insert(0, str(ROOT / "scripts"))
+import prereg  # noqa: E402
+import burn  # noqa: E402
 GAMMA = 0.5772
 BUDGET = 0.10
 TRAIL_PCT = 0.85
@@ -137,6 +143,8 @@ def fit_curve(zv, fw, on, fit_idx):
 
 
 def main() -> None:
+    prereg.require("walkforward_causal")
+    burn.record("walkforward_causal.py")
     df = pd.read_parquet(PANEL).sort_index()
     levels = dc.fb.build_levels(df)
     full_idx = df.index
