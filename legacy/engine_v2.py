@@ -140,8 +140,9 @@ def rebuild_panel(out_durable: Path = DURABLE_PANEL, out_tmp: Path = DEFAULT_PAN
     # counts
     for c in df.columns:
         print(f"  {c}: {df[c].notna().sum()} valid,  sample {df[c].dropna().iloc[0]:.4f} -> {df[c].dropna().iloc[-1]:.4f}")
-    print("\nBack-adjust note: yfinance CL=F/BZ=F etc are continuous back-adjusted.")
-    print(" Expiry jumps removed; roll cost hidden. Proxy roll model compensates.")
+    print("\nCORRECTION (audit 2026-09-22): yfinance CL=F/BZ=F etc are RAW front-month.")
+    print(" Expiry jumps are NOT removed; the roll gaps are booked as price moves.")
+    print(" This inflated the measured result. See findings/artifact_audit.md.")
     # save durable
     df.to_parquet(out_durable)
     print(f" saved durable {out_durable} ({out_durable.stat().st_size/1024:.1f} KB)")
