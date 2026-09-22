@@ -117,3 +117,19 @@ engine/eia/raw_wpsr_vintage_gs.csv (pass 5, as-published storage)
         Release date is the availability date. Now the DEFAULT H1 source in
         walkforward.py / walkforward_causal.py; H1_SOURCE=revised restores the
         old current-vintage behaviour for comparison.
+
+Engine fix, 2026-09-22 (audit; supersedes the note above)
+  engine/engine_v2x.py
+    sha256: 97a3fd25a147edbbf70caaf21c3ec84c64dea8a7380a1105f2eae05aa6ccab29
+    change: missing-data handling made explicit. A leg with no price on a date
+      now holds its position and books no return for that date, stated in code,
+      instead of sum(axis=1) silently skipping NaN. Behaviour identical on the
+      current panels; the difference is that the gap is now visible.
+  engine/factor_book.py
+    sha256: f002f5fe3c50b40069180a8babe77689e329cb2343375c841672514d00da93db
+    change: the legacy book-level return path no longer uses level.pct_change()
+      (which explodes when a spread crosses zero). It uses diff / rolling mean
+      of |level|, the same basis as the audit-corrected engine. That path is not
+      called by the walk-forward harnesses, so no result changes.
+  verification: walkforward.py and walkforward_causal.py reproduce their figures
+    exactly after the change.

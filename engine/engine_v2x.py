@@ -160,7 +160,13 @@ def f2_per_leg(levels, vt: float, cap3sig: float | None):
             b = base_of(levels[leg]).shift(1).replace(0.0, np.nan)
             leg_ret[leg] = leg_pos[leg].shift(1).fillna(0.0) * levels[leg].diff() / b
     total_pos = pd.DataFrame(leg_pos).sum(axis=1)
-    total_ret = pd.DataFrame(leg_ret).sum(axis=1).fillna(0.0)
+    leg_ret_df = pd.DataFrame(leg_ret)
+    # Missing-data handling made explicit (audit fix, 2026-09-22). A leg with no
+    # price on a date cannot be marked, so it holds its position and books no
+    # return that date. This replaces the previous implicit skip of NaN by
+    # sum(axis=1), which hid the gap instead of stating it.
+    leg_ret_df = leg_ret_df.fillna(0.0)
+    total_ret = leg_ret_df.sum(axis=1)
     # turnover: sum of per-leg |dpos| (captures leg switches as exit+entry)
     turnover = pd.DataFrame(leg_pos).diff().abs().sum(axis=1)
     return {"cross_sectional": total_pos}, {"cross_sectional": total_ret}, turnover

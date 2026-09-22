@@ -142,3 +142,17 @@ changes no quoted number.
 
 Every future claim enters here with its evidence level, method, and
 reference. Claims without a level do not get cited in summaries.
+
+## Archive note (2026-09-22)
+
+The pre-audit findings and research documents, and the superseded headline
+report, were removed from this tree because they carried falsified figures.
+They are preserved, banners intact, at:
+
+    /home/sebas/algoterminal-archive/pre-audit-docs/
+
+They also remain in git history. The only figures kept in this tree are the
+corrected ones in `findings/artifact_audit.md` and this ledger, which state
+plainly which numbers were falsified and why. Falsified figures are quoted
+here only as the record of the correction; they are never presented as
+results.
