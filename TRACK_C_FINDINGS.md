@@ -1,3 +1,14 @@
+> **CORRECTION (2026-09-22, independent audit).** Every statement in this
+> document that describes the yfinance price panel as "back-adjusted" is
+> WRONG. `CL=F/BZ=F/RB=F/HO=F` are raw front-month continuous series with the
+> roll gaps intact. Proof: the 3:2:1 crack built from them gains
+> **+3.915 $/bbl on the first trading day of March, in 18 of 18 years**, and
+> repays it across the other eleven months; month-start jump ratio is 2.06x.
+> Those sessions were **40.2%** of the measured walk-forward P&L. The roll
+> jumps were never removed, so they were booked as profit. On roll-free spot
+> prices, at measured cost, the edge is not statistically significant.
+> Full record: `algoterminal-strategy-v2/findings/artifact_audit.md`.
+
 # Track C — Clean-slate engine: honesty report (Round 10C)
 
 Date: 2026-09-10.
@@ -138,7 +149,8 @@ Honest engine v2 (stub, NOCAP) vs buggy pct_change basis (illustrative):
 ### Roll proxy quality
 
 - True roll drag = (F_next - F_front)/F_front at expiry, amortized daily.
-- yfinance continuous front is back-adjusted, so the gap is missing.
+- CORRECTION: yfinance continuous front is NOT back-adjusted, so roll/expiry
+  gaps are present in the panel, not missing. (Believed wrong at the time.)
 - No free source provides historical F_next for HO/RB/NG across 2007-2026.
 - Proxy uses front 21d slope *0.4 as contango indicator: sign correct, magnitude approximate.
 - Validated: proxy - stub mean delta +0.04 bps/yr OOS, but regime error +-30-50 bps/yr in contango/backwardation years.
