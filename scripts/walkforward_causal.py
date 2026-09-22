@@ -25,6 +25,8 @@ import pandas as pd
 from scipy import stats as sps
 
 ROOT = Path("/home/sebas/algoterminal-strategy-v2")
+PANEL = Path(os.environ.get("PANEL", ROOT / "engine" / "panel_v2.parquet"))
+PANEL_TAG = os.environ.get("PANEL_TAG", "walkforward_causal")
 GAMMA = 0.5772
 BUDGET = 0.10
 TRAIL_PCT = 0.85
@@ -126,7 +128,7 @@ def fit_curve(zv, fw, on, fit_idx):
 
 
 def main() -> None:
-    df = pd.read_parquet(ROOT / "engine" / "panel_v2.parquet").sort_index()
+    df = pd.read_parquet(PANEL).sort_index()
     levels = dc.fb.build_levels(df)
     full_idx = df.index
     lvl = levels["crack_321"]
@@ -273,11 +275,11 @@ def main() -> None:
     for y, v in yearly.items():
         print(f"  {y}: {v*100:+.2f}%")
     pd.DataFrame({"date": ret_full.index, "ret": ret_full.to_numpy(), "pos": pos_full.to_numpy(),
-                  "scale": np.nan}).to_csv(ROOT / "results" / "walkforward_causal_series.csv", index=False)
-    with open(ROOT / "results" / "walkforward_causal_diary.txt", "w") as f:
+                  "scale": np.nan}).to_csv(ROOT / "results" / f"{PANEL_TAG}_series.csv", index=False)
+    with open(ROOT / "results" / f"{PANEL_TAG}_diary.txt", "w") as f:
         for y, d in diary:
             f.write(f"{y} " + " ".join(f"{k}={d[k]}" for k in d) + "\n")
-    print("\nSaved results/walkforward_causal_series.csv + diary")
+    print(f"\nSaved results/{PANEL_TAG}_series.csv + diary")
     if os.environ.get("Z_LOO") == "1":
         pd.DataFrame({"date": ret_full.index, "ret": ret_full.to_numpy(),
                       "pos": pos_full.to_numpy()}).to_csv(

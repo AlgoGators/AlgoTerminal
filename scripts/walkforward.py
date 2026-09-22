@@ -14,6 +14,7 @@ minimum fit). Returns are net of 5/20 bps costs.
 from __future__ import annotations
 
 import importlib.util
+import os
 from pathlib import Path
 
 import numpy as np
@@ -21,6 +22,10 @@ import pandas as pd
 from scipy import stats as sps
 
 ROOT = Path("/home/sebas/algoterminal-strategy-v2")
+# PANEL lets the identical machinery run on a different price panel
+# (e.g. the roll-free spot panel) without touching defaults.
+PANEL = Path(os.environ.get("PANEL", ROOT / "engine" / "panel_v2.parquet"))
+PANEL_TAG = os.environ.get("PANEL_TAG", "walkforward")
 GAMMA = 0.5772
 WARMUP = 90
 BUDGET = 0.10
@@ -61,7 +66,7 @@ def block_metrics(r):
 
 
 def main() -> None:
-    df = pd.read_parquet(ROOT / "engine" / "panel_v2.parquet").sort_index()
+    df = pd.read_parquet(PANEL).sort_index()
     levels = dc.fb.build_levels(df)
     full_idx = df.index
     lvl = levels["crack_321"]
@@ -199,8 +204,8 @@ def main() -> None:
     for y, v in yearly.items():
         print(f"  {y}: {v*100:+.2f}%")
     pd.DataFrame({"date": ret_full.index, "ret": ret_full.to_numpy(), "pos": pos_full.to_numpy()}).to_csv(
-        ROOT / "results" / "walkforward_series.csv", index=False)
-    print("\nSaved results/walkforward_series.csv")
+        ROOT / "results" / f"{PANEL_TAG}_series.csv", index=False)
+    print(f"\nSaved results/{PANEL_TAG}_series.csv")
 
 
 if __name__ == "__main__":

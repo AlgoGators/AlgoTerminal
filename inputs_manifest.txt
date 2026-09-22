@@ -39,3 +39,22 @@ engine/eia/raw_*.csv (Phase 3, 2027-01-05 update)
   engine/eia/raw_ng_storage_sum.csv
     sha256: 1ff396d30bba48ff2d34dfa394e393552144735512d8469aaa3f76cea50cdf4c
     note: natgas working gas sum of 6 regions, 2010+
+
+engine/eia/raw_spot_RWTC.csv (artifact audit, 2026-09-22)
+  sha256: 09bcc4b29cce583f366709bbda663041215dc8b5547d30e3918d58ecd036fbc9
+  source: EIA v2 petroleum/pri/spt daily spot, series RWTC (WTI Cushing, $/BBL)
+  note: roll-free crude leg; fetcher scripts/fetch_spot_crack.py
+engine/eia/raw_spot_gas_nyh.csv
+  sha256: eb53db9da8ef17bcbbc8a79a1bb21eb534f913d7ba26c287be70e28c846ab611
+  source: EIA v2 daily spot, series EER_EPMRU_PF4_Y35NY_DPG (NY Harbor regular gasoline, $/GAL)
+  note: roll-free gasoline leg (matches RB futures region)
+engine/eia/raw_spot_ulsd_nyh.csv
+  sha256: 71fcef1b3ad2025c3f5b1625bb91a2178d24bf33aeb863b8b5b1ba4ba26484f3
+  source: EIA v2 daily spot, series EER_EPD2DXL0_PF4_Y35NY_DPG (NY Harbor ULSD, $/GAL)
+  note: roll-free distillate leg (matches HO futures); daily from 2006-06-14
+engine/panel_spot.parquet
+  sha256: 91d72e45fbe01e442526d48b5be1e8d09453c20567fb872cd746ad3fceed2889
+  rows:   5082 (2006-06-14 .. 2026-09-15)
+  source: built by scripts/build_spot_panel.py from the three raw_spot_* files
+  note: roll-free twin of panel_v2.parquet. CL/RB/HO are spot; BZ/NG carried
+        from panel_v2. panel_v2 untouched.

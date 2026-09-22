@@ -83,6 +83,27 @@ redo), CONSTRAINED (data).
 | DSR units | CORRECTED (was annualized-SR input; now per-period daily SR as published) | metrics_final.py |
 | DSR final config | OOS 0.907-0.960, FULL 0.824-0.912, TRAIN 0.551-0.710, VALIDATE 0.110-0.212 | metrics_final.csv |
 | DSR champion (earlier) | SUPERSEDED (same annualized-input bug) | harden_harness.py |
+
+## 2026-09-22 — artifact audit (independent re-measurement)
+
+Full memo: `findings/artifact_audit.md`. Roll-free twin panel and
+re-runnable comparison: `scripts/artifact_audit.py`.
+
+| Claim | Level | Method | Reference |
+| --- | --- | --- | --- |
+| March-1 RBOB jump = scheduled gasoline spec roll, not economics | HOLD | 19/19 futures years +9.2% vs 14/20 spot years +2.5% | artifact_audit.md F1 |
+| March-1 sessions carry 40.2% of fixed-control walk-forward P&L | HOLD | direct P&L attribution | artifact_audit.md F1 |
+| Top 1% of days carry 81% of variance | HOLD | sum-of-squares decomposition | artifact_audit.md F2 |
+| Quoted fixed-control Sharpe 0.853 | SUPERSEDED (roll artifact) | ex March 1: 0.636; roll-free spot: 0.385 | artifact_audit.md F3 |
+| Quoted causal Sharpe 0.704 | SUPERSEDED (roll artifact) | ex March 1: 0.434; roll-free spot: 0.601 | artifact_audit.md F3 |
+| Deployable benchmark has an edge (fixed controls) | FALSIFIED | roll-free spot block t 1.44, DSR 0.036 | artifact_audit.md F3 |
+| Causal variant weak positive edge | DIRECTIONAL | roll-free spot t 2.33, DSR 0.16; not significant | artifact_audit.md F3 |
+| Bare crush signal is nearly significant on roll-free prices | IDEA | spot block t 1.68 at z<=-0.70, MaxDD -75% | artifact_audit.md F4 |
+| Causal entry cut "largest bin t>=1.5" implements the crush thesis | FALSIFIED | selects least-crushed bin; zcut +0.70 in 2012-2014 | artifact_audit.md F5 |
+| Committed causal walk-forward artifact reproduces | FALSIFIED | committed Sh 0.459 vs committed-code Sh 0.704 | artifact_audit.md F6 |
+| DSR trial count 1000 is adequate | FALSIFIED | >=1136 configs in-repo; DSR falls to 0.41 at N=20000 | artifact_audit.md F7 |
+| Honest real result (roll-free, 2012-2026) | HOLD | ann +4.7..+7.7%, Sh 0.39..0.67, t 1.4..2.7, DSR 0.04..0.25 | artifact_audit.md |
+
 ## Rule
 
 Every future claim enters here with its evidence level, method, and
