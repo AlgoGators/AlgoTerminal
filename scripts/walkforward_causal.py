@@ -90,6 +90,8 @@ def z_lag_loo(lvl, lookback=90, clip=8.0, min_obs=30):
 spec = importlib.util.spec_from_file_location("dc", str(ROOT / "scripts" / "derived_controls_harness.py"))
 dc = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(dc)
+dc.b4.TRADE_BPS = float(os.environ.get("TRADE_BPS", 5.0))
+dc.b4.ROLL_BPS = float(os.environ.get("ROLL_BPS", 20.0))
 
 
 def deflated_sharpe(sr_daily, rets, T, N):

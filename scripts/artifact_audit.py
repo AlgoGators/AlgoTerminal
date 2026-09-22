@@ -86,6 +86,64 @@ def artifact_masks(idx: pd.DatetimeIndex) -> dict[str, pd.Series]:
     }
 
 
+def real_round_trip_cost() -> dict:
+    """Real round-trip cost of one 1,000 bbl 3:2:1 crack-spread unit.
+
+    Published components (2025):
+      exchange + clearing, NYMEX energy, non-member: $1.60 per contract per side
+      NFA assessment fee:                            $0.02 per contract per side
+      retail commission:                             $0 to $2.50 per side
+      slippage: one tick round trip (cross half the bid-ask each way)
+
+    One crack unit = 3 CL + 2 RB + 1 HO contracts = 1,000 bbl of spread.
+    Tick values: CL $10.00, RB $4.20, HO $4.20.
+    """
+    exchange, nfa = 1.60, 0.02
+    ticks = {"CL": (3, 10.00), "RB": (2, 4.20), "HO": (1, 4.20)}
+    slip = sum(n * v for n, v in ticks.values())
+    out = {}
+    for comm in (0.0, 1.50, 2.50):
+        fees = 12 * (exchange + nfa + comm)          # 6 contracts x 2 sides
+        out[comm] = fees + slip
+    return {"slippage_round_trip": slip, "by_commission": out}
+
+
+def cost_sensitivity(series: dict, levels=(5, 10, 16, 24, 40)) -> None:
+    """Recompute each saved series at higher per-side costs.
+
+    The saved return is net of 5 bps per side, so gross = net +
+    5bps*turnover and net(c) = gross - c*turnover. Turnover is |d pos|.
+    """
+    base_level = 19.19  # mean crack level, $/bbl, spot panel 2006-2024
+    print("\n=== real round-trip cost of one 1,000 bbl 3:2:1 crack unit ===")
+    rc = real_round_trip_cost()
+    print(f"  slippage (3 CL + 2 RB + 1 HO, one tick round trip): ${rc['slippage_round_trip']:.2f}")
+    for comm, tot in rc["by_commission"].items():
+        per_bbl = tot / 1000.0
+        bps_side = (per_bbl / base_level) * 10000 / 2
+        print(f"  commission ${comm:.2f}/side -> total ${tot:.2f} = ${per_bbl:.4f}/bbl "
+              f"= {bps_side:.1f} bps per side")
+    print(f"  harness assumption: 5 bps per side = ${0.0005 * base_level:.4f}/bbl "
+          f"= ${2 * 0.0005 * base_level:.4f}/bbl round trip")
+
+    print("\n=== cost sensitivity (spot panel, roll-free) ===")
+    hdr = f"{'series':<34}" + "".join(f"{c:>6}bps" for c in levels)
+    print(hdr)
+    for label, fname in series.items():
+        if "spot" not in label and "contiguous" not in label:
+            continue
+        d = pd.read_csv(ROOT / "results" / fname, parse_dates=["date"]).set_index("date")
+        turn = d["pos"].diff().abs().fillna(0.0)
+        gross = d["ret"] + 0.0005 * turn
+        row = f"{label:<34}"
+        for c in levels:
+            net = gross - (c / 10000.0) * turn
+            m = metrics(net)
+            row += f"{m['tb']:>+9.2f}"
+        print(row)
+    print("  (cells are block t at that per-side cost level)")
+
+
 def main() -> None:
     series = {
         "FIXED controls / futures (quoted)": "walkforward_series.csv",
@@ -110,6 +168,8 @@ def main() -> None:
             print(f"{tag:<38}{name:<16}{m['ann']:>+8.2f}%{m['sh']:>9.3f}{m['dd']:>+8.2f}%"
                   f"{m['tb']:>+9.2f}{m['dsr_q']:>9.3f}{m['dsr_r']:>11.3f}")
         print()
+
+    cost_sensitivity(series)
 
 
 if __name__ == "__main__":

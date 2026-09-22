@@ -40,3 +40,10 @@ bps/side, independent ledger recomputation matches, no single year
 
 A pass supports a small staged allocation only. It does not scale
 from the historical Sharpe.
+
+## SUPERSEDED
+
+This protocol froze the artifact-contaminated panel (CL=F/RB=F/HO=F)
+and assumed costs (5/20 bps). The March contract-roll artifact alone
+was 40.2% of the tested P&L. Use `forward_protocol_v3.md`.
+See `findings/artifact_audit.md`.

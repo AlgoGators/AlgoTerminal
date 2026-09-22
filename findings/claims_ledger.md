@@ -108,6 +108,9 @@ re-runnable comparison: `scripts/artifact_audit.py`.
 | Assumed -20 bps/yr roll drag | CONFIRMED-STAT | realized carry -0.3%/yr measured directly | artifact_audit.md F4b |
 | Causal entry threshold is pinned by the data | FALSIFIED | zcut wanders +0.70 to -0.91; thin windows stay positive | artifact_audit.md F5b |
 | Contiguous-crush entry rule | DIRECTIONAL | futures t 2.88; roll-free spot t 2.54, DSR 0.234 | wf_crush_* |
+| Assumed 5 bps/side trade cost | FALSIFIED | measured 16.2-24.0 bps/side, 3.2-4.8x low | artifact_audit.md F8 |
+| Roll-free edge at measured cost | FALSIFIED | block t 1.0 (fixed) to 2.1 (contiguous-crush) at 24 bps | artifact_audit.md F8 |
+| Forward protocol v3 (roll-free, measured cost) | WRITTEN | frozen; no Sharpe gate | research/forward_protocol_v3.md |
 
 ## Rule
 

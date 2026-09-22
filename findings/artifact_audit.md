@@ -175,6 +175,33 @@ rows across 85 result CSVs and 39 harnesses, plus the v1 audit tree and
 `book_oos_v2..v8`. At N=5000 the fixed-panel DSR falls 0.707 -> 0.544;
 at N=20000, 0.410.
 
+## Finding 8 — the assumed 5 bps/side cost is low by 3.2x to 4.8x
+
+Measured from published components for one 1,000 bbl 3:2:1 crack unit
+(3 CL + 2 RB + 1 HO = 6 contracts):
+
+| component | value |
+| --- | --- |
+| exchange + clearing | $1.60 per contract per side (CME 2025, NYMEX energy, non-member) |
+| NFA assessment | $0.02 per contract per side |
+| commission | $0.00 to $2.50 per side |
+| slippage | one tick round trip: CL $10.00, RB $4.20, HO $4.20 |
+
+Round trip per crack unit = $62.04 (no commission) to $92.04
+($2.50/side) = **16.2 to 24.0 bps per side**. The harness used 5 bps.
+
+Cost sensitivity (block t, roll-free spot panel):
+
+| series | 5bps | 10bps | 16bps | 24bps | 40bps |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| FIXED controls | +1.44 | +1.33 | +1.20 | +1.03 | +0.69 |
+| CAUSAL re-derived | +2.33 | +2.22 | +2.07 | +1.88 | +1.50 |
+| CAUSAL contiguous-crush | +2.54 | +2.43 | +2.29 | +2.11 | +1.74 |
+
+The 5 bps column reproduces the reported block t exactly, which validates
+the reconstruction. At measured cost nothing on roll-free prices reaches
+significance.
+
 ## Honest real result
 
 On roll-free prices, over 2012-2026 (~15y, ~185 trades):
@@ -210,7 +237,13 @@ change is removed. The best roll-free case (contiguous-crush rule) is block t
    comparing the rolled series to the roll-free spot series, which is
    sufficient and does not depend on a roll calendar.
 2. Replace the assumed 5/20 bps with measured exchange, commission, and roll
-   numbers. OPEN. Roll is now measured (-0.3%/yr). Trade cost still assumed.
+   numbers. DONE. Real round trip is 16.2-24.0 bps per side (assumed 5).
+   Roll realized is -0.3%/yr (assumed -0.20). At measured cost, roll-free
+   block t is 1.0-2.3. Nothing reaches significance.
+5. Freeze a forward test on new data. DONE as `research/forward_protocol_v3.md`.
+   It uses the roll-free signal, discloses the threshold as a selection, uses
+   the measured cost, and sets gates without a Sharpe target. The v2 protocol
+   is marked superseded.
 3. Fix the causal entry rule. DONE as `ENTRY_RULE=contiguous_crush`; result is
    that the threshold is not pinned by the data (Finding 5b).
 4. Regenerate every quoted artifact from committed code and verify
