@@ -97,6 +97,15 @@ def build_levels(df: pd.DataFrame) -> dict[str, pd.Series]:
     }
 
 
+def base_of(level, lookback: int = 20):
+    """Return denominator: rolling mean of |level|.
+
+    Used instead of pct_change so a spread that crosses zero does not
+    explode the return. Same basis as the audit-corrected engine.
+    """
+    return level.abs().rolling(lookback, min_periods=10).mean().shift(1).replace(0.0, float("nan"))
+
+
 def seasonal_mean(s: pd.Series, minobs: int = SEASON_MIN_OBS) -> pd.Series:
     out = pd.Series(np.nan, index=s.index)
     for m in range(1, 13):
@@ -310,12 +319,13 @@ def main() -> None:
             for i in range(len(zdf)):
                 if pos.iloc[i] != 0.0 and not np.isnan(arr[i]).all():
                     held_level.iloc[i] = levels[cols[int(np.nanargmin(arr[i]))]].iloc[i]
-            prev_held = held_level.shift(1)
-            r = pos.shift(1).fillna(0.0) * prev_held.pct_change().fillna(0.0)
+            b = base_of(held_level)
+            r = pos.shift(1).fillna(0.0) * (held_level.diff() / b).fillna(0.0)
             factor_rets[name] = r.fillna(0.0)
         else:
             level = levels[name]
-            r = pos.shift(1).fillna(0.0) * level.pct_change().fillna(0.0)
+            b = base_of(level)
+            r = pos.shift(1).fillna(0.0) * (level.diff() / b).fillna(0.0)
             factor_rets[name] = r.fillna(0.0)
 
     print("\n=== FACTOR BOOK (2023-09 to 2026-09) ===")

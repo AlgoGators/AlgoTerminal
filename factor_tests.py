@@ -4,6 +4,16 @@ import pandas as pd
 import numpy as np
 import yfinance as yf
 
+
+def base_of(level, lookback: int = 20):
+    """Return denominator: rolling mean of |level|.
+
+    Used instead of pct_change so a spread that crosses zero does not
+    explode the return. Same basis as the audit-corrected engine.
+    """
+    return level.abs().rolling(lookback, min_periods=10).mean().shift(1).replace(0.0, float("nan"))
+
+
 raw = {}
 for s, t in {"CL": "CL=F", "BZ": "BZ=F", "RB": "RB=F", "HO": "HO=F", "NG": "NG=F"}.items():
     d = yf.download(t, start="2023-09-08", end="2026-09-09", progress=False, auto_adjust=False, multi_level_index=False)
@@ -73,8 +83,8 @@ def cagr_sharpe(r):
 p321 = smr_pos(crack_wti)
 pho = smr_pos(crack_ho)
 r_smr = (
-    p321.shift(1).fillna(0) * crack_wti.pct_change().fillna(0)
-    + pho.shift(1).fillna(0) * crack_ho.pct_change().fillna(0)
+    p321.shift(1).fillna(0) * (crack_wti.diff() / base_of(crack_wti)).fillna(0)
+    + pho.shift(1).fillna(0) * (crack_ho.diff() / base_of(crack_ho)).fillna(0)
 )
 record_factor("F1_smr_book", r_smr)
 
@@ -125,7 +135,7 @@ has_crush = ((zdf < -0.5).any(axis=1)) & valid
 r_xs = pd.Series(0.0, index=zdf.index)
 for k in legs:
     on = (most_crushed == k) & has_crush
-    r_xs[on] = legs[k].pct_change().fillna(0)[on]
+    r_xs[on] = (legs[k].diff() / base_of(legs[k])).fillna(0)[on]
 r_xs = r_xs.shift(1).fillna(0)
 record_factor("F2_cross_sectional", r_xs)
 c, sh = cagr_sharpe(r_xs)
@@ -189,7 +199,7 @@ for i in range(len(df)):
     bw_vals[i] = state
 bw_sig = pd.Series(bw_vals, index=df.index)
 bw_pos = bw_sig * 0.15  # small book add, sized low
-r_bw = bw_pos.shift(1).fillna(0) * bzwti.pct_change().fillna(0)
+r_bw = bw_pos.shift(1).fillna(0) * (bzwti.diff() / base_of(bzwti)).fillna(0)
 record_factor("F4_bw_convergence", r_bw)
 c, sh = cagr_sharpe(r_bw)
 print("Brent-WTI convergence (vt~0.15): CAGR=%.2f%% Sharpe=%.2f  corr with SMR=%.2f" % (c, sh, r_bw.corr(r_smr)))
