@@ -15,6 +15,15 @@ import pandas as pd
 ROOT = Path(__file__).resolve().parent.parent
 ENGINE = ROOT / "engine"
 PANEL = ENGINE / "panel_v2.parquet"
+# WARNING (artifact audit 2026-09-22): this panel is yfinance raw front-month,
+# NOT back-adjusted. Its legs roll on different dates, so the crack series
+# carries a scheduled level jump (+3.915 $/bbl every March, 18/18 years;
+# 40.2% of the measured walk-forward P&L). Any number this harness prints for
+# a crack factor is inflated. Use engine/panel_spot.parquet (roll-free) or
+# read findings/artifact_audit.md before citing anything from here.
+print("WARNING: derived_controls_harness is running on the artifact panel "
+      "(panel_v2.parquet, raw front-month, NOT back-adjusted). Crack numbers "
+      "are inflated. See findings/artifact_audit.md.")
 EIA = ENGINE / "eia"
 
 spec = importlib.util.spec_from_file_location("fb", str(ENGINE / "factor_book.py"))
