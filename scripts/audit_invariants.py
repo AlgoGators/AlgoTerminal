@@ -100,6 +100,19 @@ def main() -> int:
         check(f"{fname}: Sharpe {got_sh:.3f}, ann {got_ann:+.2f}%", ok,
               f"expected Sharpe {sh}, ann {ann}")
 
+    print("6. research gates")
+    import importlib.util as _ilu
+    _g = _ilu.spec_from_file_location("gates", ROOT / "scripts" / "gates.py")
+    gates = _ilu.module_from_spec(_g)
+    _g.loader.exec_module(gates)
+    dc = gates.load_dc()
+    ok_c, _lines = gates.causality_gate(dc)
+    check("causality gate (truncate and compare)", ok_c,
+          "a transform at t changed when data after t was added")
+    _lvl = dc.fb.build_levels(pd.read_parquet(ROOT / "engine" / "panel_spot.parquet").sort_index())["crack_321"]
+    _finds = gates.artifact_scan(_lvl)
+    check("data artifact gate (roll-free panel)", not _finds, f"findings: {_finds}")
+
     print()
     if FAILURES:
         print(f"FAILED ({len(FAILURES)}):")

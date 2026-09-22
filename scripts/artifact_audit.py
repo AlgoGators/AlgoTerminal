@@ -30,11 +30,22 @@ from scipy import stats as sps
 
 ROOT = Path("/home/sebas/algoterminal-strategy-v2")
 GAMMA = 0.5772
-# 1136 configuration rows are visible across results/*.csv in this repo
-# alone (plus 39 harnesses, branch cool/kelly grids, book_oos v2-v8, the
-# v1 audit tree). 1000, the number the headline used, is a floor.
+# Trial counts are read from the durable counter (scripts/trials.py), so the
+# multiple-testing correction tracks the real number of configurations tried.
+# 1000, the number the original headline used, is kept only as a reference.
+_N_TRIALS_FLOOR = 1136
 N_TRIALS_QUOTED = 1000
-N_TRIALS_REAL = 1136
+
+def _trials_real() -> int:
+    try:
+        import sys as _sys
+        _sys.path.insert(0, str(ROOT / "scripts"))
+        import trials
+        return trials.count()
+    except Exception:
+        return _N_TRIALS_FLOOR
+
+N_TRIALS_REAL = _trials_real()
 
 
 def deflated_sharpe(r: pd.Series, N: int) -> float:
