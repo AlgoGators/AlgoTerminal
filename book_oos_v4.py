@@ -31,7 +31,9 @@ import numpy as np
 import pandas as pd
 
 DEV = Path(__file__).parent
-TEMP_PANEL = Path("/tmp/panel_adj_2007_2026.parquet")
+TEMP_PANEL = (Path("/tmp/panel_adj_2007_2026.parquet")
+         if Path("/tmp/panel_adj_2007_2026.parquet").exists()
+         else Path(__file__).resolve().parent / "panel_v2.parquet")
 DURABLE_PANEL = DEV / "panel_v2.parquet"
 
 
