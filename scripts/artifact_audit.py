@@ -92,6 +92,8 @@ def main() -> None:
         "CAUSAL re-derived / futures (quoted)": "walkforward_causal_series.csv",
         "FIXED controls / roll-free spot": "spot_fixed_series.csv",
         "CAUSAL re-derived / roll-free spot": "spot_causal_series.csv",
+        "CAUSAL contiguous-crush / futures": "wf_crush_futures_series.csv",
+        "CAUSAL contiguous-crush / roll-free spot": "wf_crush_spot_series.csv",
     }
     hdr = f"{'strategy / panel':<38}{'exclusion':<16}{'ann':>9}{'Sharpe':>9}{'MaxDD':>9}{'block t':>9}{'DSR@1e3':>9}{'DSR@1.1e3':>11}"
     print(hdr)

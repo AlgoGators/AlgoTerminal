@@ -38,6 +38,13 @@ ZLO, ZHI = -4.0, 1.5
 MIN_BIN = 20
 T_SIG = 1.5
 MIN_FIT = 100
+# ENTRY_RULE selects how the crush entry cut is derived from prior data.
+#   max_significant_bin (default, historical): largest z-bin with t >= T_SIG.
+#     This picks the LEAST-crushed qualifying bin, which contradicts the
+#     long-when-crushed thesis and admitted zcut up to +0.70.
+#   contiguous_crush: walk up from the lowest eligible z-bin while the bin
+#     t stays >= T_SIG; cut = the top of that contiguous crush region.
+ENTRY_RULE = os.environ.get("ENTRY_RULE", "max_significant_bin")
 
 
 def z_lag_loo(lvl, lookback=90, clip=8.0, min_obs=30):
@@ -172,9 +179,17 @@ def main() -> None:
         zcents = ZLO + (np.arange(NBINS) + 0.5) * (ZHI - ZLO) / NBINS
         tval = curve / sd
         cut = np.nan
-        use_bins = np.flatnonzero(np.isfinite(tval) & (tval >= T_SIG) & (nn >= MIN_BIN))
-        if len(use_bins):
-            cut = zcents[use_bins.max()]
+        if ENTRY_RULE == "contiguous_crush":
+            elig = np.flatnonzero(np.isfinite(tval) & (nn >= MIN_BIN))
+            b = 0
+            while b < len(elig) and tval[elig[b]] >= T_SIG:
+                b += 1
+            if b > 0:
+                cut = zcents[elig[b - 1]] + 0.5 * (ZHI - ZLO) / NBINS
+        else:
+            use_bins = np.flatnonzero(np.isfinite(tval) & (tval >= T_SIG) & (nn >= MIN_BIN))
+            if len(use_bins):
+                cut = zcents[use_bins.max()]
         if not np.isfinite(cut) or not np.isfinite(maxc) or maxc <= 0:
             print(f"{y}: no significant bins on prior data, flat year")
             diary.append((y, dict(scale=0.0, cb=0.0, hard=0.0, trail=0.0, cool=0, zcut=np.nan)))

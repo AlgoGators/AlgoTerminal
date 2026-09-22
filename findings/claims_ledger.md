@@ -101,8 +101,13 @@ re-runnable comparison: `scripts/artifact_audit.py`.
 | Bare crush signal is nearly significant on roll-free prices | IDEA | spot block t 1.68 at z<=-0.70, MaxDD -75% | artifact_audit.md F4 |
 | Causal entry cut "largest bin t>=1.5" implements the crush thesis | FALSIFIED | selects least-crushed bin; zcut +0.70 in 2012-2014 | artifact_audit.md F5 |
 | Committed causal walk-forward artifact reproduces | FALSIFIED | committed Sh 0.459 vs committed-code Sh 0.704 | artifact_audit.md F6 |
+| Instantaneous curve slope equals realized roll carry | FALSIFIED (own error, discarded) | +34%/yr estimate vs -0.3%/yr measured | artifact_audit.md F4b |
 | DSR trial count 1000 is adequate | FALSIFIED | >=1136 configs in-repo; DSR falls to 0.41 at N=20000 | artifact_audit.md F7 |
-| Honest real result (roll-free, 2012-2026) | HOLD | ann +4.7..+7.7%, Sh 0.39..0.67, t 1.4..2.7, DSR 0.04..0.25 | artifact_audit.md |
+| Honest real result (roll-free, 2012-2026) | HOLD | ann +4.7..+8.4%, Sh 0.39..0.67, t 1.4..2.5, DSR 0.04..0.23 | artifact_audit.md |
+| March roll gap is +3.92 $/bbl, 18/18 years, repaid over the other months | HOLD | rolled vs roll-free spot spread, net ~0/yr | artifact_audit.md F1 |
+| Assumed -20 bps/yr roll drag | CONFIRMED-STAT | realized carry -0.3%/yr measured directly | artifact_audit.md F4b |
+| Causal entry threshold is pinned by the data | FALSIFIED | zcut wanders +0.70 to -0.91; thin windows stay positive | artifact_audit.md F5b |
+| Contiguous-crush entry rule | DIRECTIONAL | futures t 2.88; roll-free spot t 2.54, DSR 0.234 | wf_crush_* |
 
 ## Rule
 

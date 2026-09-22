@@ -58,3 +58,32 @@ engine/panel_spot.parquet
   source: built by scripts/build_spot_panel.py from the three raw_spot_* files
   note: roll-free twin of panel_v2.parquet. CL/RB/HO are spot; BZ/NG carried
         from panel_v2. panel_v2 untouched.
+
+engine/eia/raw_fut_*_c{1,2,3,4}.csv (artifact audit pass 2, 2026-09-22)
+  source: EIA v2 petroleum/pri/fut daily settlements; fetcher scripts/fetch_fut_contracts.py
+  note: WTI RCLC1-4, RBOB EER_EPMRR_PEk_Y35NY_DPG, HO EER_EPD2F_PEk_Y35NY_DPG
+        coverage ends 2024-04-05 (EIA retired the daily futures route)
+  engine/eia/raw_fut_ho_c1.csv
+    sha256: 4002598d98a2a76c4ed532f1cc8d8bf73bf07ea1523ba0e9f38afcdf6dcefd7f
+  engine/eia/raw_fut_ho_c2.csv
+    sha256: c3eaf6825d7253ca9f93e8dd2dd80666b92528dadb9f8ac4af1c714655ba0f8f
+  engine/eia/raw_fut_ho_c3.csv
+    sha256: 2dd039226c614bfa265d5ae873e9d3e6c7f8e5c87fec88f3d2e77ead87ec1790
+  engine/eia/raw_fut_ho_c4.csv
+    sha256: b64f41de853677cab3ef3debc4f3518488d9430020fa629caaac47925fcf6e6d
+  engine/eia/raw_fut_rbob_c1.csv
+    sha256: 39cedb2cf4060dc53d94e605c0a45ef93f91855d83f93cc08fa310218ce0aaae
+  engine/eia/raw_fut_rbob_c2.csv
+    sha256: 9ceee68fccc5c7cb94c7a7b6850a3b1a8a9cb7ce85882f62ab41029748efcf86
+  engine/eia/raw_fut_rbob_c3.csv
+    sha256: a9eab8058073253381e981a9f679d7217091b5f85cc4ac32edd8a68638f24646
+  engine/eia/raw_fut_rbob_c4.csv
+    sha256: 9fba192002ee3f1921e23e69e1b2c5b1f428674d16a18bd9ddf12c3a444f918e
+  engine/eia/raw_fut_wti_c1.csv
+    sha256: 12f307d9ad2bea0a5944c3c9427c2915da74f5377e5e631db8a20d05c6823d76
+  engine/eia/raw_fut_wti_c2.csv
+    sha256: 0065fa3bcad54589afc18421ab6c7a7e50c14874987fd0d7ff00b9b2bdb62ef7
+  engine/eia/raw_fut_wti_c3.csv
+    sha256: 5a5ef8bc33d553668c0c176c5b31b8f96c15e46e542d90908a89b2865ee2b8c9
+  engine/eia/raw_fut_wti_c4.csv
+    sha256: f7f9d98e9d296c9ad24e98fbaa019badb8ab38f088cda5f839a4c51dcf0375d7

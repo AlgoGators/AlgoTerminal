@@ -36,10 +36,27 @@ with no refining-margin content. The matching spot series shows
 Those 15 sessions carry **+0.692 of the +1.722 total P&L = 40.2%** in the
 fixed-control walk-forward.
 
-Mechanism: the seasonal norm for March is built from prior Marches, which
-are already post-switch, so late-February levels read as artificially
-"crushed". The signal goes long into a jump it cannot miss. The book was
-long into March 1 in 6 of 15 years and won all 6.
+### The mechanism, proved exactly
+
+The rolled continuous series can be compared directly to the roll-free spot
+series over the same 2006-2024 window. The difference is the accumulated
+construction/roll gap:
+
+| change in (rolled - spot) gap | value | years |
+| --- | ---: | --- |
+| March, per month | **+3.915 $/bbl** | positive **18/18** |
+| every other month, per month | -0.363 $/bbl | - |
+| full year, net | -0.76 $/bbl | ~zero |
+| March-1 sessions alone | **+3.163 $/bbl** | positive 15/18 |
+
+The rolled series gains +3.9 $/bbl every March and gives it all back across
+the other eleven months. A position held year-round nets zero. A position
+held **only across the March roll** keeps the jump for free. That is exactly
+what the seasonal signal does, because the seasonal norm for March is built
+from prior Marches that are already post-switch, so late-February reads as
+artificially "crushed".
+
+The book was long into March 1 in 6 of 15 years and won all 6.
 
 ## Finding 2 — the whole headline depends on a few days
 
@@ -60,6 +77,10 @@ top 1% of absolute days or the roll windows moves every headline number.
 | FIXED / **roll-free spot** | as reported | +5.26% | 0.385 | -22.2% | **+1.44** | **0.036** |
 | CAUSAL / **roll-free spot** | as reported | +7.71% | 0.601 | -21.1% | +2.33 | 0.162 |
 | CAUSAL / roll-free spot | ex top 1% | +6.22% | 0.671 | -18.1% | +2.73 | 0.251 |
+| CAUSAL contiguous-crush / futures | as reported | +9.89% | 0.715 | -20.3% | +2.88 | 0.439 |
+| CAUSAL contiguous-crush / futures | ex March 1 | +4.86% | 0.438 | -20.2% | +1.64 | 0.056 |
+| CAUSAL contiguous-crush / **roll-free spot** | as reported | +8.41% | 0.667 | -21.1% | +2.54 | 0.234 |
+| CAUSAL contiguous-crush / roll-free spot | ex top 1% | +6.06% | 0.656 | -20.6% | +2.68 | 0.232 |
 
 The quoted deployable benchmark (fixed controls) has **block t 1.44 and
 DSR 0.036** on roll-free prices. That is indistinguishable from luck.
@@ -94,7 +115,46 @@ Entry `z <= +0.70` trades almost the whole distribution, which contradicts
 region on roll-free spot is `z < -0.7` with bin t of 4.3-7.0; the rule
 ignores it in favour of a weak secondary region around `z = +0.2..+0.5`.
 
-## Finding 6 — the committed causal artifact does not reproduce
+## Finding 4b — the roll COST model was fine; the defect is the artifact
+
+To check whether the assumed -20 bps/yr roll drag was the problem, the
+realized carry was measured directly: the total change in the spread level
+of the rolled contract-1 series versus the roll-free spot series.
+
+| measure | value |
+| --- | ---: |
+| period | 2006-06-14 .. 2024-04-05 (17.8y) |
+| cumulative roll effect | -1.10 $/bbl total |
+| per year | -0.06 $/bbl/yr = **-0.3%/yr** of the crack level |
+
+The harness assumed -20 bps/yr. The realized figure is about -30 bps/yr.
+Same sign, same order of magnitude. **The roll cost assumption was not the
+problem.** The problem is the March timing artifact above: a real position
+that rolls pays the premium back, so the jump is not a repeatable profit.
+
+(An earlier analytic estimate in this audit used the instantaneous curve
+slope, `(c1-c2)/c1`, and suggested a large positive carry of about +34%/yr.
+That estimate was wrong and was discarded after this direct measurement.
+Instantaneous slope is not realized carry.)
+
+## Finding 5b — the entry threshold is not pinned by the data
+
+The derived entry cut wanders across a very wide range depending on the
+training window: +0.70 (2012-2014), +0.47, +0.24, -0.45, -0.68, -0.91.
+That is a swing from deep-crush to no-filter at all.
+
+The thesis-consistent alternative is implemented as `ENTRY_RULE=contiguous_crush`
+(walk up from the lowest eligible z-bin while bin t stays >= 1.5). It still
+wanders into positive territory with thin training data (2012: -0.10,
+2013: +0.35, 2014: +0.13), because early windows are noisy and the walk can
+run through the neutral zone.
+
+Conclusion: this derivation does not pin the threshold. It behaves as a
+free parameter that the training data cannot determine. Under the project's
+own standard it must therefore be disclosed as a risk-preference or
+significance-level selection, not presented as "derived".
+
+
 
 The committed `results/walkforward_causal_series.csv` (commit `be66e95`)
 yields **ann +5.87%, Sharpe 0.459, block t 1.54, MaxDD -29.1%**.
@@ -119,15 +179,15 @@ at N=20000, 0.410.
 
 On roll-free prices, over 2012-2026 (~15y, ~185 trades):
 
-- **ann +4.7% to +7.7%**
+- **ann +4.7% to +8.4%**
 - **Sharpe 0.39 to 0.67**
-- **block t 1.4 to 2.7**
+- **block t 1.4 to 2.5** (2.5 to 2.9 only after the entry-rule fix)
 - **MaxDD -18% to -22%**
-- **DSR 0.04 to 0.25** on the fixed benchmark, 0.16 on the causal variant
+- **DSR 0.04 to 0.23** on the fixed benchmark, 0.15 to 0.23 on the causal variants
 
-That sits on an architecture (CORE3 membership, drawdown overlay) selected
-on the same full sample, so it is optimistic. The edge is real but weak and
-not statistically significant once the scheduled contract change is removed.
+No variant reaches a conventional significance bar once the scheduled contract
+change is removed. The best roll-free case (contiguous-crush rule) is block t
+2.54 and DSR 0.234, and its threshold is not pinned by the data.
 
 ## What this does not prove
 
@@ -139,14 +199,20 @@ not statistically significant once the scheduled contract change is removed.
   stores only continuous series with no roll calendar. The March-1 test is
   exact, and it agrees with the heuristic mask.
 
-## Remaining work (unchanged by this audit)
+## Remaining work (status after this pass)
 
-1. Build the crack from same-delivery-month contracts at settlement, with an
-   explicit measured roll cost. EIA `petroleum/pri/fut` exposes contract 1/2/3
-   settlements, so the roll yield is measurable for free.
+1. ~~Same-delivery-month contracts at settlement, explicit measured roll~~
+   DONE. Contracts 1-4 fetched (`scripts/fetch_fut_contracts.py`, EIA
+   `petroleum/pri/fut`, daily, ends 2024-04-05). Realized carry measured at
+   -0.3%/yr, so the assumed -20 bps roll drag was sound. EIA's contract-1/2/3
+   series do not satisfy the clean shift-by-one identity, so an exact
+   same-month stitch was not built; the artifact was proved instead by
+   comparing the rolled series to the roll-free spot series, which is
+   sufficient and does not depend on a roll calendar.
 2. Replace the assumed 5/20 bps with measured exchange, commission, and roll
-   numbers (long-standing ledger item).
-3. Fix the causal entry rule so "longest qualifying bin" cannot select a
-   non-crushed region.
+   numbers. OPEN. Roll is now measured (-0.3%/yr). Trade cost still assumed.
+3. Fix the causal entry rule. DONE as `ENTRY_RULE=contiguous_crush`; result is
+   that the threshold is not pinned by the data (Finding 5b).
 4. Regenerate every quoted artifact from committed code and verify
-   reproducibility before citing it.
+   reproducibility. DONE for the fixed-control artifact (byte-identical) and
+   the causal artifact (now regenerated). See Finding 6.
