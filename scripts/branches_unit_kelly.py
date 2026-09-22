@@ -129,7 +129,7 @@ def run(mode: str, ctrl: dict):
     prod_z = dc.daily_state(dc.sm_z((gas + dist).diff()), full_idx).to_numpy(dtype=float)
     rv = lvl.diff().abs().rolling(20, min_periods=10).mean().shift(1).replace(0.0, np.nan)
     inv = (1.0 / rv).fillna(1.0)
-    relnorm = (inv / inv.expanding(min_periods=252).median().fillna(inv.median())).fillna(1.0)
+    relnorm = (inv / inv.expanding(min_periods=252).median()).fillna(1.0)  # causal, neutral fallback
     lvl_n = lvl.to_numpy(dtype=float)
     tbar = ctrl["tbar"]
     ss = ctrl["stor"]

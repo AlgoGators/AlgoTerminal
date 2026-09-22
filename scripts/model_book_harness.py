@@ -27,7 +27,14 @@ spec4.loader.exec_module(b4)
 
 BLOCK = 20
 WARMUP = 90
+# NOTE (artifact audit 2026-09-22): this window is NOT out-of-sample.
+# It fully contains the training window, so any number reported under the
+# "OOS" label from this harness is in-sample. See findings/artifact_audit.md.
 OOS_LO, OOS_HI = "2007-07-30", "2023-09-08"
+if OOS_LO <= "2018-12-31":
+    print("WARNING: the window labelled OOS (2007-07-30..2023-09-08) fully "
+          "contains the 2007-2018 training window; OOS numbers from this "
+          "harness are IN-SAMPLE. See findings/artifact_audit.md.")
 FULL_LO, FULL_HI = "2007-07-30", "2026-09-09"
 
 

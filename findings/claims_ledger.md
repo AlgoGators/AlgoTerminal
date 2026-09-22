@@ -112,6 +112,27 @@ re-runnable comparison: `scripts/artifact_audit.py`.
 | Roll-free edge at measured cost | FALSIFIED | block t 1.0 (fixed) to 2.1 (contiguous-crush) at 24 bps | artifact_audit.md F8 |
 | Forward protocol v3 (roll-free, measured cost) | WRITTEN | frozen; no Sharpe gate | research/forward_protocol_v3.md |
 
+## 2026-09-22 — integrity sweep (code, data, docs)
+
+Remaining defect inventory. Each item was verified in the tree, not
+inferred. Fixes applied where the fix is unambiguously correct and
+changes no quoted number.
+
+| Claim | Level | Evidence | Status |
+| --- | --- | --- | --- |
+| "OOS" window in 10 harnesses is out-of-sample | FALSIFIED | OOS 2007-07-30..2023-09-08 contains TRAIN 2007-2018 | warning added to 6 harnesses |
+| honesty_harness "OOS" and "IS" windows are distinct | FALSIFIED | OOS 2007-2023 overlaps IS 2023-2026 | warning added |
+| Ledger claim "book has positive edge OOS" | DOWNGRADED to IN-SAMPLE | source champion_restatement.md used the mislabelled window | see above |
+| yfinance panel is back-adjusted | FALSIFIED | month-start jump ratio 2.06x; +3.915 $/bbl March gap 18/18 | claimed in engine_v2.py:143, LONG_BACKTEST:10, TRACK_C:141, unseen_validation:595 |
+| relnorm fallback is causal | FIXED | was fillna(full-sample median); now fillna(1.0) | 4 files; artifacts byte-identical |
+| Missing price leg contributes zero return | BIAS (open) | sum(axis=1) skips NaN; bzwti 1.5% missing in panel_v2 | flagged, not changed |
+| EIA weekly storage is point-in-time | FALSIFIED | single current vintage, no revision history; H1 gate uses revised data | flagged, not fixed |
+| Fixed-control walk-forward 2012-2018 is out-of-sample for controls | FALSIFIED | controls selected on 2007-2018 | clean segment 2019+: futures t 1.99, spot t 1.26 |
+| Published factor_book.py has no return-basis bug | FALSIFIED | pct_change at lines 314/318 (the G2 bug) | dead internally, live in the public repo |
+| Audit-repo forward machinery is clean | FALSIFIED | forward_test/forward_shadow/unseen_validation use panel_v2 and 5/20 | superseded by forward_protocol_v3.md |
+| final_report.md headline is current | FALSIFIED (banner added) | quoted Sharpe 0.86, +11.3%/yr | superseded banner at top |
+| Honest clean-sample result (2019+) | HOLD | futures t 1.99, spot t 1.26, DSR weak | nothing significant |
+
 ## Rule
 
 Every future claim enters here with its evidence level, method, and

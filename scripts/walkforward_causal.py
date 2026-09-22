@@ -160,7 +160,7 @@ def main() -> None:
     h1 = (prod_z >= 1.0).shift(1).fillna(0.0).to_numpy(dtype=bool)
     rv = lvl.diff().abs().rolling(20, min_periods=10).mean().shift(1).replace(0.0, np.nan)
     inv = (1.0 / rv).fillna(1.0)
-    relnorm = (inv / inv.expanding(min_periods=252).median().fillna(inv.median())).fillna(1.0)
+    relnorm = (inv / inv.expanding(min_periods=252).median()).fillna(1.0)  # causal, neutral fallback
 
     lvl_n = lvl.to_numpy(dtype=float)
     base_n = base.to_numpy(dtype=float)

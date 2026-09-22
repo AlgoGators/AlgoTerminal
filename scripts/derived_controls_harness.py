@@ -31,7 +31,13 @@ PER_TRADE = 0.02
 CB_Q = 0.01
 TRAIL_Q = 0.75
 TRAIN_LO, TRAIN_HI = "2007-01-01", "2018-12-31"
+# NOTE (artifact audit 2026-09-22): this window is NOT out-of-sample.
+# It fully contains the training window, so any number reported under the
+# "OOS" label from this harness is in-sample. See findings/artifact_audit.md.
 OOS_LO, OOS_HI = "2007-07-30", "2023-09-08"
+if OOS_LO <= TRAIN_HI:
+    print(f"WARNING: window labelled OOS ({OOS_LO}..{OOS_HI}) overlaps TRAIN "
+          f"({TRAIN_LO}..{TRAIN_HI}); OOS numbers from this harness are IN-SAMPLE.")
 VAL_LO, VAL_HI = "2019-01-01", "2026-09-09"
 FULL_LO, FULL_HI = "2007-07-30", "2026-09-09"
 NBINS = 24

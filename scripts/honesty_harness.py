@@ -121,6 +121,14 @@ def main() -> None:
 
     rows = []
     log("\nnon-overlap 20d blocks:")
+    # NOTE (artifact audit 2026-09-22): the window labelled "OOS" below is
+    # NOT out-of-sample. It spans 2007-07-30..2023-09-08 and fully contains
+    # the training window 2007-2018, and it also overlaps the window labelled
+    # "IS" (2023-09..2026-09). The labels are wrong. Numbers reported as
+    # "OOS" here are in-sample. See findings/artifact_audit.md.
+    print("WARNING: honesty_harness labels 2007-2023 as OOS, but that window "
+          "contains the 2007-2018 training window. OOS numbers here are "
+          "IN-SAMPLE. The only post-training segment is 2023-09 onward.")
     for wname, (lo, hi) in (("OOS", ("2007-07-30", "2023-09-08")),
                             ("IS", ("2023-09-08", "2026-09-09")),
                             ("FULL", ("2007-07-30", "2026-09-09"))):

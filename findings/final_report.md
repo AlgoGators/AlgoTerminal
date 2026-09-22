@@ -1,5 +1,26 @@
 # The Strategy — Full Writeup for Presentation
 
+> **SUPERSEDED HEADLINE NUMBERS (artifact audit, 2026-09-22).**
+> The performance numbers in this document are inflated and must not be
+> quoted. Two defects were found after it was written:
+>
+> 1. The price panel is built from yfinance continuous front-month
+>    futures, which are **not** back-adjusted (this document and the
+>    audit docs assert that they are; they are not). The legs roll on
+>    different dates, so the crack series gains **+3.915 $/bbl every
+>    March for 18 of 18 years** and repays it over the other months.
+>    Those sessions were **40.2%** of the fixed-control P&L.
+> 2. The assumed cost of 5 bps per side is low by 3.2x to 4.8x. The
+>    measured round trip is **16.2 to 24.0 bps per side**.
+>
+> On roll-free prices, at measured cost: ann +4% to +8%, Sharpe 0.39 to
+> 0.67, block t 1.0 to 2.3, DSR 0.04 to 0.23, on an architecture
+> selected in-sample. Nothing is statistically significant.
+> The quoted Sharpe 0.86 and the "+11.3% per year" figure are falsified.
+> Read `findings/artifact_audit.md` and `findings/claims_ledger.md`
+> instead. The walk-forward/DSR numbers here also used 1000 trials; the
+> true trial count is at least 1136.
+
 A complete, build-from-first-principles explanation of the crack-margin
 strategy: what it trades, why the edge exists, how it is built, every
 number it uses and where that number came from, the full measured
