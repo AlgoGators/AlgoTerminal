@@ -80,10 +80,13 @@ def main() -> int:
     print("5. quoted artifacts reproduce")
     import numpy as np
     import pandas as pd
+    # Availability-correct H1 (as-published storage) is the default, so these
+    # are the honest baselines. Values change only with a real methodological
+    # correction, never silently.
     expect = {
-        "walkforward_series.csv": (0.853, 11.75, 5),
-        "spot_fixed_series.csv": (0.385, 5.26, 4),
-        "wf_crush_spot_series.csv": (0.667, 8.41, 4),
+        "walkforward_series.csv": (0.701, 10.03, 5),
+        "spot_fixed_series.csv": (0.464, 6.77, 4),
+        "wf_crush_spot_series.csv": (0.628, 8.59, 4),
     }
     for fname, (sh, ann, tol) in expect.items():
         p = ROOT / "results" / fname

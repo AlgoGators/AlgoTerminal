@@ -132,6 +132,11 @@ changes no quoted number.
 | Audit-repo forward machinery is clean | FALSIFIED | forward_test/forward_shadow/unseen_validation use panel_v2 and 5/20 | superseded by forward_protocol_v3.md |
 | final_report.md headline is current | FALSIFIED (banner added) | quoted Sharpe 0.86, +11.3%/yr | superseded banner at top |
 | Honest clean-sample result (2019+) | HOLD | futures t 1.99, spot t 1.26, DSR weak | nothing significant |
+| H1 gate used current-vintage storage (lookahead) | FALSIFIED -> FIXED | as-published archive rebuilt; Sharpe 0.853 -> 0.701 | artifact_audit.md F9 |
+| Storage revision content is material | FALSIFIED | 4/788 releases differ; median revision 0 | artifact_audit.md F9 |
+| Fixed-control 2012-2018 is out-of-sample for controls | FALSIFIED -> DEMOTED | clean 2019+: futures t 1.68, spot t 1.21 | artifact_audit.md F10 |
+| Missing leg contributes zero return | BOUNDED | crack_321 2 NaN days, bzwti 73 (1.51%); superseded aggregation only | artifact_audit.md F11 |
+| Honest headline (as-published H1, roll-free, measured cost) | HOLD | ann +4.9..+8.6%, Sh 0.45..0.63, t 1.2..2.4, DSR 0.07..0.21 | artifact_audit.md pass 5 |
 
 ## Rule
 

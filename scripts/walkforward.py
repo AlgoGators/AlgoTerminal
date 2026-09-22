@@ -83,10 +83,22 @@ def main() -> None:
     r2 = pd.Series(np.select([lvl - base_r < -band, lvl - base_r > band],
                              ["comp", "exp"], default="norm"), index=full_idx)
     rarr = r2.isin(["comp", "norm"]).to_numpy(dtype=bool)
-    gas = dc.read_csv(ROOT / "engine" / "eia" / "raw_WGTSTUS1.csv")
-    dist = dc.read_csv(ROOT / "engine" / "eia" / "raw_WDISTUS1.csv")
-    prod_z = dc.daily_state(dc.sm_z((gas + dist).diff()), full_idx)
+    # Default: as-published (availability-aligned) storage data. The revised
+    # series is a diagnostic alternative (H1_SOURCE=revised).
+    if os.environ.get("H1_SOURCE") != "revised":
+        # as-published values, indexed by release date (availability date)
+        v = pd.read_csv(ROOT / "engine" / "eia" / "raw_wpsr_vintage_gs.csv",
+                        parse_dates=["release_date"]).set_index("release_date").sort_index()
+        vs = v["gas"] + v["dist"]
+        pz = dc.sm_z(vs.diff())
+        prod_z = pz.reindex(pz.index.union(full_idx)).sort_index().ffill().reindex(full_idx)
+    else:
+        gas = dc.read_csv(ROOT / "engine" / "eia" / "raw_WGTSTUS1.csv")
+        dist = dc.read_csv(ROOT / "engine" / "eia" / "raw_WDISTUS1.csv")
+        prod_z = dc.daily_state(dc.sm_z((gas + dist).diff()), full_idx)
     h1_m = (1 - (prod_z >= 1.0).shift(1).fillna(0.0)).shift(1).fillna(1.0)
+    if os.environ.get("H1_OFF") == "1":  # diagnostic: measure the H1 gate contribution
+        h1_m = pd.Series(1.0, index=full_idx)
     rv = lvl.diff().abs().rolling(20, min_periods=10).mean().shift(1).replace(0.0, np.nan)
     inv = (1.0 / rv).fillna(1.0)
     relnorm = (inv / inv.expanding(min_periods=252).median()).fillna(1.0)  # causal, neutral fallback

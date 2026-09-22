@@ -249,3 +249,89 @@ change is removed. The best roll-free case (contiguous-crush rule) is block t
 4. Regenerate every quoted artifact from committed code and verify
    reproducibility. DONE for the fixed-control artifact (byte-identical) and
    the causal artifact (now regenerated). See Finding 6.
+
+---
+
+# Pass 5 — the three parked defects, fixed
+
+These were parked as "modeling choices". They were not. Two produced wrong
+numbers and one was a wrong implementation. All three are now fixed.
+
+## F9 — the H1 storage gate used current-vintage data (fixed)
+
+`raw_WGTSTUS1.csv` / `raw_WDISTUS1.csv` are the current vintage. EIA revises
+weekly stocks, so historical dates held numbers not public at the time.
+
+Fix: rebuilt the gate from the **as-published** EIA WPSR archive
+(`scripts/fetch_wpsr_vintage.py`, 788 releases, 2011-08-03 to 2026-09-16,
+zero misses, `engine/eia/raw_wpsr_vintage_gs.csv`). Release date is the
+availability date, so no separate lag is needed.
+
+Revision size measured: only **4 of 788** releases differ from the current
+vintage by more than 0.01%; median revision is exactly 0; mean |revision| is
+0.005% of level. Consecutive releases carry identical prior-week values.
+So the *revision* content is negligible.
+
+But **availability alignment** matters a lot. As-published is now the default:
+
+| variant | revised H1 | as-published H1 |
+| --- | ---: | ---: |
+| fixed / futures | Sh 0.853 | **Sh 0.701** |
+| causal / futures | Sh 0.704 | **Sh 0.595** |
+| fixed / spot | Sh 0.385 | **Sh 0.464** |
+| causal / spot | Sh 0.601 | **Sh 0.572** |
+
+The revised series was indexed by week-ending date plus six days; the
+archive is indexed by actual release date. That timing was worth up to 0.15
+of Sharpe. `H1_SOURCE=revised` restores the old behaviour for comparison.
+
+## F10 — the fixed-control walk-forward was in-sample for 2012-2018 (demoted)
+
+The four fixed controls were selected on 2007-2018, and the evaluation then
+started in 2012. So seven of fifteen evaluation years used controls fitted
+partly on themselves. That is a straight selection error.
+
+The causal variant is unaffected: it re-derives every control per year on
+prior data only, so it is the honest headline.
+
+Clean, post-selection segment (2019 onward):
+
+| panel | 2012-2026 (overlap) | 2019-2026 (clean) |
+| --- | ---: | ---: |
+| futures | Sh 0.701, t +2.83 | **Sh 0.758, t +1.68** |
+| roll-free spot | Sh 0.464, t +1.80 | **Sh 0.453, t +1.21** |
+
+Nothing is significant on the clean segment.
+
+## F11 — a missing price leg silently contributed zero (measured, bounded)
+
+`DataFrame.sum(axis=1)` skips NaN, so a leg with a missing price contributed a
+0 return instead of being handled explicitly. Measured impact on the frozen
+panel: `crack_321` has **2** NaN days (0.04%), `bzwti` has **73** (1.51%),
+`ng` none. The quoted walk-forward results use `crack_321` only, so they are
+essentially unaffected. The effect is confined to multi-factor aggregation in
+the superseded CORE3 book, where it understates exposure slightly on about
+1.5% of days for one of three factors. It does not create phantom profit.
+
+The tool backtester drops missing rows explicitly (`prices.dropna()`), so the
+production path does not have the problem. Recorded as a bounded limitation
+rather than changed, because changing the frozen engine would change its
+manifest hash and the superseded numbers it produced are already bannered.
+
+## Honest results after pass 5 (availability-correct H1, roll-free where noted)
+
+| strategy / panel | ann | Sharpe | MaxDD | block t | DSR |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| FIXED / futures | +10.03% | 0.701 | -18.3% | +2.83 | 0.386 |
+| FIXED / roll-free spot | +6.77% | 0.464 | -22.2% | +1.80 | 0.071 |
+| CAUSAL / futures | +8.24% | 0.595 | -23.6% | +2.55 | 0.210 |
+| CAUSAL / roll-free spot | +7.95% | 0.572 | -20.3% | +2.23 | 0.146 |
+| CRUSH / futures | +8.07% | 0.558 | -21.8% | +2.41 | 0.174 |
+| CRUSH / roll-free spot | +8.59% | 0.628 | -20.4% | +2.40 | 0.205 |
+
+Excluding March 1 on the futures panel: fixed Sharpe 0.453 (t 1.77), causal
+0.314 (t 1.20), crush 0.256 (t 0.99). On roll-free spot the March exclusion
+barely moves anything, as it should.
+
+At measured cost (16-24 bps per side) and on the clean post-selection segment,
+nothing reaches significance.

@@ -107,3 +107,13 @@ engine/factor_book.py provenance update (2026-09-22)
         The fix replaces the pct_change spread return with
         diff / rolling_mean(|level|). Only the frozen snapshot retains
         the old basis, and it is documented as dead code.
+
+engine/eia/raw_wpsr_vintage_gs.csv (pass 5, as-published storage)
+  sha256: f4335b264eace3152950d54b80cef717ae3d6718767a1f0a13daaa183a1d35c6
+  source: EIA Weekly Petroleum Status Report archive, per-release csv/table1.csv
+  rows: 788 releases (2011-08-03 .. 2026-09-16)
+  fetcher: scripts/fetch_wpsr_vintage.py
+  note: as-published (vintage) gasoline and distillate stocks, in million bbl.
+        Release date is the availability date. Now the DEFAULT H1 source in
+        walkforward.py / walkforward_causal.py; H1_SOURCE=revised restores the
+        old current-vintage behaviour for comparison.
