@@ -1,3 +1,11 @@
+> **PRE-AUDIT DOCUMENT (2026-09-22).** Results here predate the independent
+> artifact audit and are superseded. The price panel is yfinance raw
+> front-month (NOT back-adjusted); the March contract-roll artifact alone was
+> 40.2% of the measured P&L; and the assumed 5 bps/side cost is 3.2-4.8x too
+> low. On roll-free prices at the measured cost the edge is not
+> statistically significant. See `findings/artifact_audit.md` and
+> `findings/claims_ledger.md`.
+
 # Long Backtest — Findings (16y Out-of-Sample, Real Costs)
 
 Date: 2026-09-09. Worktree: `/home/sebas/algoterminal-strategy-dev` (branch
@@ -7,7 +15,7 @@ Evaluation procedure owned by `EVALUATION_LENS.md`: behavior first,
 numbers second. Every run is mined for regime behavior, mechanism,
 retained signal, and next variants before any verdict.
 
-Data: yfinance continuous futures, back-adjusted closes, 2007-07-02 to
+Data: yfinance continuous front-month futures, NOT back-adjusted, 2007-07-02 to
 2026-09-09 (4829 rows). CL=F, BZ=F, RB=F, HO=F, NG=F. Same tickers and
 construction as the recorded research.
 
@@ -404,8 +412,8 @@ even in-sample the corrected raw book is 1.31, not the recorded 2.63.
    is pre-sample history, not a forward test.
 3. Roll economics are unmodeled state. A fixed 20bps/yr drag ignores
    contango/backwardation. A long-biased book in backwardation earns the
-   roll; in contango it bleeds. The synthetic back-adjusted series hides
-   this P&L source.
+   roll; in contango it bleeds. CORRECTION: the series is raw front-month,
+   not back-adjusted, so the roll GAPS are present and booked as price moves.
 4. Fills are optimistic. 5bps/side is thin in stress regimes, and the
    crack legs roll monthly at the front month with real bid-offer width.
    No official settlement prices; backtest uses yfinance closes.
@@ -1158,8 +1166,8 @@ dropped IS cross 1.02->0.75. Roll stub 20bps/yr vs slope proxy (21d front
 pct*0.4, 5d smooth, +-6% clip): mean delta +0.04bps/yr OOS net zero, but
 hides regime sign +30-50bps earn in 2021-22 backwardation and -30-50bps
 bleed in 2015 contango — stub honest on average, dishonest on regime.
-True adjacent spread unavailable via yfinance free (back-adjusted front
-hides expiry gaps). Trade 5->10bps drops Sharpe 0.71->0.67, 20bps->0.59;
+True adjacent spread is unavailable from yfinance free sources. CORRECTION:
+the front series is NOT back-adjusted, so roll/expiry gaps are visible. Trade 5->10bps drops Sharpe 0.71->0.67, 20bps->0.59;
 stress double (5*2 on high-vol days, 75th pctile 20d CL vol) drops
 0.71->0.70 and CAGR 11.08->10.90% (+18bps/yr). Gap caps halve worst day
 -12.16%->-5.59% at CAP5 with Sharpe 0.71->0.65.

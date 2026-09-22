@@ -1,3 +1,11 @@
+> **PRE-AUDIT DOCUMENT (2026-09-22).** Results here predate the independent
+> artifact audit and are superseded. The price panel is yfinance raw
+> front-month (NOT back-adjusted); the March contract-roll artifact alone was
+> 40.2% of the measured P&L; and the assumed 5 bps/side cost is 3.2-4.8x too
+> low. On roll-free prices at the measured cost the edge is not
+> statistically significant. See `findings/artifact_audit.md` and
+> `findings/claims_ledger.md`.
+
 # Forward protocol v2 — B1h (paper test)
 
 Candidate: B1h = regime-gated seasonal crush (comp/norm only, exit on

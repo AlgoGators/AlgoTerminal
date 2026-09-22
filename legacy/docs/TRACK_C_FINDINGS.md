@@ -1,3 +1,11 @@
+> **PRE-AUDIT DOCUMENT (2026-09-22).** Results here predate the independent
+> artifact audit and are superseded. The price panel is yfinance raw
+> front-month (NOT back-adjusted); the March contract-roll artifact alone was
+> 40.2% of the measured P&L; and the assumed 5 bps/side cost is 3.2-4.8x too
+> low. On roll-free prices at the measured cost the edge is not
+> statistically significant. See `findings/artifact_audit.md` and
+> `findings/claims_ledger.md`.
+
 # Track C — Clean-slate engine: honesty report (Round 10C)
 
 Date: 2026-09-10.
@@ -138,7 +146,8 @@ Honest engine v2 (stub, NOCAP) vs buggy pct_change basis (illustrative):
 ### Roll proxy quality
 
 - True roll drag = (F_next - F_front)/F_front at expiry, amortized daily.
-- yfinance continuous front is back-adjusted, so the gap is missing.
+- CORRECTION: yfinance continuous front is NOT back-adjusted, so roll/expiry
+  gaps are present, not missing.
 - No free source provides historical F_next for HO/RB/NG across 2007-2026.
 - Proxy uses front 21d slope *0.4 as contango indicator: sign correct, magnitude approximate.
 - Validated: proxy - stub mean delta +0.04 bps/yr OOS, but regime error +-30-50 bps/yr in contango/backwardation years.

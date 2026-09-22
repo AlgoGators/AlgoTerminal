@@ -87,3 +87,11 @@ engine/eia/raw_fut_*_c{1,2,3,4}.csv (artifact audit pass 2, 2026-09-22)
     sha256: 5a5ef8bc33d553668c0c176c5b31b8f96c15e46e542d90908a89b2865ee2b8c9
   engine/eia/raw_fut_wti_c4.csv
     sha256: f7f9d98e9d296c9ad24e98fbaa019badb8ab38f088cda5f839a4c51dcf0375d7
+
+engine/factor_book.py (known defect, documented not edited)
+  note: the legacy book-level path (lines ~314/318) prices P&L with
+        level.pct_change(), the G2 return-basis bug. That path is DEAD:
+        the harnesses only call fb.build_levels and fb.seasonal_z.
+        The file is a frozen input (byte-identical to the audit source),
+        so it is kept unchanged for reproducibility. The published
+        algoterminal-strategy/factor_book.py has been fixed.
