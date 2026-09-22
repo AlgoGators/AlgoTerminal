@@ -125,7 +125,7 @@ def main() -> int:
     prereg = _ilu.module_from_spec(_p)
     _p.loader.exec_module(prereg)
     _names = [q.stem for q in sorted((ROOT / "research" / "prereg").glob("*.md"))]
-    _probs = [x for n in _names for x in prereg.check(n)] if _names else ["no registrations"]
+    _probs = [x for n in _names for x in (prereg.check(n) + prereg.order_problems(n))] if _names else ["no registrations"]
     check("experiments are pre-registered", not _probs, f"{_probs}")
 
     print()

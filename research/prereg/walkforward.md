@@ -1,5 +1,10 @@
 # Preregistration: walkforward (fixed controls)
 
+## Status
+Retrospective. The results it registers were produced before this file was
+written, so this registration carries no evidential weight. It fixes the
+hypothesis and the kill rule for future runs.
+
 ## Hypothesis
 The refining-margin crush signal mean-reverts. A walk-forward that re-estimates
 every data-driven component (exposure curve, tail scale, circuit breaker,

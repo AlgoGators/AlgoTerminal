@@ -1,5 +1,10 @@
 # Preregistration: walkforward_causal (and the contiguous-crush variant)
 
+## Status
+Retrospective. The results it registers were produced before this file was
+written, so this registration carries no evidential weight. It fixes the
+hypothesis and the kill rule for future runs.
+
 ## Hypothesis
 If every control is re-derived each year from prior data alone, the result no
 longer depends on a control set chosen with hindsight. The contiguous-crush

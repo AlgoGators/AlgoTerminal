@@ -172,7 +172,7 @@ def prereg_gate() -> tuple[bool, list[str]]:
     if not names:
         problems.append("no preregistration files exist")
     for n in names:
-        problems += prereg.check(n)
+        problems += prereg.check(n) + prereg.order_problems(n)
     # the experiment scripts must actually enforce it
     for script, key in (("walkforward.py", "walkforward"),
                         ("walkforward_causal.py", "walkforward_causal")):

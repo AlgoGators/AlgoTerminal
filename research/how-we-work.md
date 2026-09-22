@@ -36,9 +36,13 @@ Run `python scripts/gates.py` before any claim. Hard gates must pass.
    notional, with no margin, no leverage and no capital base. It is not a
    return on capital, and any figure quoted without its basis is a failure.
 7. **Pre-registration.** An experiment script calls `prereg.require(name)` and
-   refuses to run without `research/prereg/<name>.md` containing a hypothesis,
-   evaluation window, kill rule, cost basis and decision rule. This is the
-   only defence against searching the evaluation window.
+   refuses to run without `research/prereg/<name>.md` containing a status, a
+   hypothesis, an evaluation window, a kill rule, a cost basis and a decision
+   rule. The registration must be committed BEFORE the run it registers: if an
+   artifact already existed when the registration was first committed, the gate
+   fails unless the file says it is retrospective, in which case it carries no
+   evidential weight. This is the only defence against searching the
+   evaluation window.
 8. **Evaluation-window burn register.** `scripts/burn.py` records every read of
    the historical window and states that the window is fully spent. A claim is
    certifiable only from forward sessions on or after 2026-10-01, once there
