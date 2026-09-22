@@ -1,4 +1,13 @@
-"""One-shot, no-order forward shadow for the frozen CORE3 strategy."""
+"""
+
+"AUDIT NOTE (2026-09-22): this module is SUPERSEDED and CONTAMINATED.
+
+It runs on panel_v2.parquet (yfinance raw front-month, NOT back-adjusted),
+whose roll gaps were booked as price moves, and it hardcodes 5 bps/side
+when the measured real cost is 16.2-24.0 bps/side. It refuses to run unless
+I_ACKNOWLEDGE_CONTAMINATED_FORWARD=1. Use forward_protocol_v3.md in
+algoterminal-strategy-v2 instead.
+"""
 from __future__ import annotations
 
 import argparse
@@ -261,7 +270,33 @@ def _next_sequence(log_path: Path, historical_rows: int) -> int:
     return int(json.loads(lines[-1])["event_sequence"]) + 1
 
 
+
+def _refuse_contaminated_forward() -> None:
+    """Refuse to run this superseded, contaminated forward test.
+
+    Found by the 2026-09-22 audit:
+      - the panel is yfinance raw front-month (NOT back-adjusted), so the
+        roll gaps are booked as price moves; those sessions were 40.2% of
+        the measured walk-forward P&L;
+      - costs are hardcoded at 5 bps/side; the measured real round trip is
+        16.2-24.0 bps per side.
+    Use algoterminal-strategy-v2/research/forward_protocol_v3.md instead.
+    Set I_ACKNOWLEDGE_CONTAMINATED_FORWARD=1 only to reproduce the old record.
+    """
+    import os
+    if os.environ.get("I_ACKNOWLEDGE_CONTAMINATED_FORWARD") == "1":
+        return
+    raise SystemExit(
+        "REFUSING TO RUN: this forward test is superseded and contaminated.\n"
+        "  panel: panel_v2.parquet = yfinance raw front-month, NOT back-adjusted\n"
+        "  costs: 5 bps/side hardcoded; measured real cost is 16.2-24.0 bps/side\n"
+        "See algoterminal-strategy-v2/research/forward_protocol_v3.md.\n"
+        "Set I_ACKNOWLEDGE_CONTAMINATED_FORWARD=1 to reproduce the old record."
+    )
+
+
 def main(argv: list[str] | None = None) -> int:
+    frozen._refuse_contaminated_forward()
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--manifest", required=True, type=Path)
     parser.add_argument("--log", required=True, type=Path)

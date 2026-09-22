@@ -1,3 +1,14 @@
+> **CORRECTION (2026-09-22, independent audit).** Every statement in this
+> document that describes the yfinance price panel as "back-adjusted" is
+> WRONG. `CL=F/BZ=F/RB=F/HO=F` are raw front-month continuous series with the
+> roll gaps intact. Proof: the 3:2:1 crack built from them gains
+> **+3.915 $/bbl on the first trading day of March, in 18 of 18 years**, and
+> repays it across the other eleven months; month-start jump ratio is 2.06x.
+> Those sessions were **40.2%** of the measured walk-forward P&L. The roll
+> jumps were never removed, so they were booked as profit. On roll-free spot
+> prices, at measured cost, the edge is not statistically significant.
+> Full record: `algoterminal-strategy-v2/findings/artifact_audit.md`.
+
 # Engine reuse research
 
 ## Scope and conclusion
@@ -71,7 +82,8 @@ Translate the existing panel into a `MarketSnapshot` and translate `strategy_v4`
 Preserve the existing shifted-signal behavior.
 3. Add a `RollPolicy` and `ContractResolver`.
 Resolve the active contract per root, emit a roll event, and persist old/new symbols, timestamp, reason, and quantities.
-Do not infer rolls from a back-adjusted close.
+Do not infer rolls from a close series that has been back-adjusted. (Note: the
+local yfinance panel is raw front-month, not back-adjusted, so rolls ARE visible.
 4. Add an execution model interface with `submit`, `match`, `cancel`, `commission`, and `slippage` hooks.
 The imc4 fill loop can supply test fixtures for market, limit, passive, partial, and rejected orders.
 5. Add a ledger adapter.

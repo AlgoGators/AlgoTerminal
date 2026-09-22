@@ -1,9 +1,12 @@
-"""Frozen walk-forward validation for the corrected futures book.
+"""
 
-This module evaluates the declared historical variants without selecting a
-release from validation results.  Parameters are fixed in ``engine_v2``.
-Only non-EQ factor weights are fitted, and each fit stops before the fold's
-90 completed-session purge gap.
+"AUDIT NOTE (2026-09-22): this module is SUPERSEDED and CONTAMINATED.
+
+It runs on panel_v2.parquet (yfinance raw front-month, NOT back-adjusted),
+whose roll gaps were booked as price moves, and it hardcodes 5 bps/side
+when the measured real cost is 16.2-24.0 bps/side. It refuses to run unless
+I_ACKNOWLEDGE_CONTAMINATED_FORWARD=1. Use forward_protocol_v3.md in
+algoterminal-strategy-v2 instead.
 """
 from __future__ import annotations
 
@@ -524,7 +527,33 @@ def run_validation(panel_path: Path = PANEL) -> pd.DataFrame:
     return result
 
 
+
+def _refuse_contaminated_forward() -> None:
+    """Refuse to run this superseded, contaminated forward test.
+
+    Found by the 2026-09-22 audit:
+      - the panel is yfinance raw front-month (NOT back-adjusted), so the
+        roll gaps are booked as price moves; those sessions were 40.2% of
+        the measured walk-forward P&L;
+      - costs are hardcoded at 5 bps/side; the measured real round trip is
+        16.2-24.0 bps per side.
+    Use algoterminal-strategy-v2/research/forward_protocol_v3.md instead.
+    Set I_ACKNOWLEDGE_CONTAMINATED_FORWARD=1 only to reproduce the old record.
+    """
+    import os
+    if os.environ.get("I_ACKNOWLEDGE_CONTAMINATED_FORWARD") == "1":
+        return
+    raise SystemExit(
+        "REFUSING TO RUN: this forward test is superseded and contaminated.\n"
+        "  panel: panel_v2.parquet = yfinance raw front-month, NOT back-adjusted\n"
+        "  costs: 5 bps/side hardcoded; measured real cost is 16.2-24.0 bps/side\n"
+        "See algoterminal-strategy-v2/research/forward_protocol_v3.md.\n"
+        "Set I_ACKNOWLEDGE_CONTAMINATED_FORWARD=1 to reproduce the old record."
+    )
+
+
 def main() -> None:
+    _refuse_contaminated_forward()
     result = run_validation()
     write_report(result)
     print(f"wrote {RESULTS} ({len(result)} rows)")
@@ -592,7 +621,7 @@ def write_report(result: pd.DataFrame, path: Path = REPORT) -> None:
               "v4 and v5 have no declared event-label negative control in their source code, so their control fields are empty.", "",
               "## Exact limitations", "",
               "- These folds are retrospective. The candidate space and release history were known before this rerun.",
-              "- The panel uses yfinance continuous front-month closes. It is back-adjusted and not a tradeable adjacent-contract history.",
+              "- CORRECTION: the panel is yfinance raw front-month closes, NOT back-adjusted, so roll gaps are present and booked as price moves. Not a tradeable adjacent-contract history.",
               "- Official settlement, historical option prices, and exact contract-level fills are unavailable from the local panel.",
               "- The 20 bps annual roll stream is a fixed stub. It does not prove realized roll economics.",
               "- Fold overlays restart at each validation window. This avoids carrying validation state across folds but differs from one uninterrupted live path.",

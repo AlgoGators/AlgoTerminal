@@ -196,3 +196,13 @@ Investment remains rejected until an independent reviewer receives:
 
 A pass supports only a small staged allocation with a fresh hard loss budget.
 It does not authorize scaling from the historical Sharpe.
+
+## SUPERSEDED (2026-09-22 audit)
+
+This protocol and the machinery it describes are superseded and refused at
+run time. It froze panel_v2.parquet (yfinance raw front-month, NOT
+back-adjusted), whose roll gaps inflated the measured P&L by 40.2%, and it
+assumed 5 bps/side against a measured real cost of 16.2-24.0 bps/side.
+The quoted OOS Sharpe 0.86 is falsified.
+Use `algoterminal-strategy-v2/research/forward_protocol_v3.md`.
+Full record: `algoterminal-strategy-v2/findings/artifact_audit.md`.
