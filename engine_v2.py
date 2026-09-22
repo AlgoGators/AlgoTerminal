@@ -70,7 +70,9 @@ import pandas as pd
 
 # ---- worktree paths ----
 DEV = Path(__file__).parent
-DEFAULT_PANEL = Path("/tmp/panel_adj_2007_2026.parquet")
+DEFAULT_PANEL = (Path("/tmp/panel_adj_2007_2026.parquet")
+         if Path("/tmp/panel_adj_2007_2026.parquet").exists()
+         else Path(__file__).resolve().parent / "panel_v2.parquet")
 DURABLE_PANEL = DEV / "panel_v2.parquet"
 
 # ---- time windows ----

@@ -23,7 +23,9 @@ import numpy as np
 import pandas as pd
 
 DEV = Path("/home/sebas/algoterminal-strategy-dev")
-PANEL = Path("/tmp/panel_adj_2007_2026.parquet")
+PANEL = (Path("/tmp/panel_adj_2007_2026.parquet")
+         if Path("/tmp/panel_adj_2007_2026.parquet").exists()
+         else Path(__file__).resolve().parent / "panel_v2.parquet")
 IS_START = pd.Timestamp("2023-09-08")
 OOS_START = pd.Timestamp("2007-07-30")
 WARMUP = 90
