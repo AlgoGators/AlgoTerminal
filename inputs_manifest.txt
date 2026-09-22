@@ -95,3 +95,15 @@ engine/factor_book.py (known defect, documented not edited)
         The file is a frozen input (byte-identical to the audit source),
         so it is kept unchanged for reproducibility. The published
         algoterminal-strategy/factor_book.py has been fixed.
+
+engine/factor_book.py provenance update (2026-09-22)
+  note: the frozen copy above is the PRE-FIX snapshot, kept byte-identical
+        for reproducibility. Its sibling working copies have since been
+        fixed:
+          - algoterminal-strategy/factor_book.py (published)   -> fixed
+          - algoterminal-strategy-audit/factor_book.py          -> fixed
+          - algoterminal-strategy-dev/factor_book.py            -> fixed
+          - algoterminal/factor_book.py (tool backtester)       -> fixed
+        The fix replaces the pct_change spread return with
+        diff / rolling_mean(|level|). Only the frozen snapshot retains
+        the old basis, and it is documented as dead code.
